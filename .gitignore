@@ -16,5 +16,5 @@ coverage
 playwright-report
 test-results
 .cache
-.tsbuildinfo
+*.tsbuildinfo
 next-env.d.ts.bak

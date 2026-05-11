@@ -1,10 +1,12 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ShieldAlert, ShieldCheck } from "lucide-react";
+import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -32,6 +34,25 @@ function MfaContent() {
   const { toast } = useToast();
   const profile = useQuery({ queryKey: ["me", "profile"], queryFn: meApi.profile });
   const [setup, setSetup] = React.useState<MfaSetupResponse | null>(null);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!setup?.qrUri) {
+      setQrCodeDataUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+    void QRCode.toDataURL(setup.qrUri, { width: 220, margin: 1 }).then((url) => {
+      if (!cancelled) {
+        setQrCodeDataUrl(url);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setup?.qrUri]);
 
   const setupMutation = useMutation({
     mutationFn: meApi.mfaSetup,
@@ -131,12 +152,29 @@ function MfaContent() {
               </Button>
             ) : (
               <div className="space-y-4">
+                {qrCodeDataUrl ? (
+                  <div className="flex flex-col items-start gap-2 rounded-md border bg-muted/30 p-3">
+                    <p className="text-sm font-medium">Scan in authenticator app</p>
+                    <Image
+                      src={qrCodeDataUrl}
+                      alt="Authenticator QR code"
+                      width={220}
+                      height={220}
+                      unoptimized
+                      className="rounded border bg-white p-1"
+                    />
+                  </div>
+                ) : null}
                 <div className="rounded-md border bg-muted/30 p-3 text-sm">
                   <p className="font-medium">Authenticator URI</p>
                   <p className="break-all font-mono text-xs">{setup.qrUri}</p>
                   <Separator className="my-2" />
                   <p className="font-medium">Shared secret</p>
                   <p className="break-all font-mono text-xs">{setup.secret}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    This secret is the private key your authenticator app uses to generate
+                    one-time codes for this account. Keep it confidential.
+                  </p>
                 </div>
                 {setup.recoveryCodes?.length ? (
                   <div className="rounded-md border border-warning/40 bg-warning/10 p-3 text-sm">
