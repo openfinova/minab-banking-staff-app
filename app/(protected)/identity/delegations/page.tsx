@@ -2,15 +2,14 @@
 
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -43,6 +42,7 @@ import {
   createDelegationSchema,
   type CreateDelegationInput,
 } from "@/lib/schemas/delegations";
+import { StaffUserField } from "@/components/identity/staff-user-field";
 
 export default function DelegationsPage() {
   return (
@@ -55,16 +55,43 @@ export default function DelegationsPage() {
 function DelegationsContent() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const { data, isLoading } = useQuery({
-    queryKey: ["delegations", "active"],
-    queryFn: delegationsApi.active,
+  const [activeDraft, setActiveDraft] = React.useState({
+    delegateeUserId: "",
+    transactionType: "USER_PROVISIONING",
   });
+  const [activeLookup, setActiveLookup] = React.useState<{
+    delegateeUserId: string;
+    transactionType: string;
+  } | null>(null);
+
+  const [browseUserId, setBrowseUserId] = React.useState("");
+  const [browseKind, setBrowseKind] = React.useState<"outgoing" | "incoming" | null>(null);
+
+  const activeQuery = useQuery({
+    queryKey: ["delegations", "active", activeLookup?.delegateeUserId, activeLookup?.transactionType],
+    queryFn: () =>
+      delegationsApi.active(activeLookup!.delegateeUserId, activeLookup!.transactionType.trim()),
+    enabled:
+      Boolean(activeLookup) &&
+      activeLookup!.delegateeUserId.trim().length > 0 &&
+      activeLookup!.transactionType.trim().length > 0,
+  });
+
+  const browseQuery = useQuery({
+    queryKey: ["delegations", browseKind, browseUserId],
+    queryFn: () =>
+      browseKind === "outgoing"
+        ? delegationsApi.outgoing(browseUserId)
+        : delegationsApi.incoming(browseUserId),
+    enabled: Boolean(browseKind && browseUserId.trim().length > 0),
+  });
+
   const [revokeId, setRevokeId] = React.useState<string | null>(null);
 
-  const onRevoke = async (reason: string) => {
+  const onRevoke = async () => {
     if (!revokeId) return;
     try {
-      await delegationsApi.revoke(revokeId, { reason: reason || undefined });
+      await delegationsApi.revoke(revokeId);
       toast({ title: "Delegation revoked" });
       queryClient.invalidateQueries({ queryKey: ["delegations"] });
     } catch (error) {
@@ -76,78 +103,195 @@ function DelegationsContent() {
     }
   };
 
+  const runActiveLookup = () => {
+    const delegateeUserId = activeDraft.delegateeUserId.trim();
+    const transactionType = activeDraft.transactionType.trim();
+    if (!delegateeUserId) {
+      toast({
+        variant: "destructive",
+        title: "Delegatee required",
+        description: "Enter a staff user id (UUID, username, or email fragment).",
+      });
+      return;
+    }
+    if (!transactionType) {
+      toast({
+        variant: "destructive",
+        title: "Transaction type required",
+        description: "Enter the transaction type to match active delegations.",
+      });
+      return;
+    }
+    setActiveLookup({ delegateeUserId, transactionType });
+  };
+
+  const runBrowse = (kind: "outgoing" | "incoming") => {
+    const id = browseUserId.trim();
+    if (!id) {
+      toast({
+        variant: "destructive",
+        title: "Staff user required",
+        description: "Enter a staff user id (UUID, username, or email fragment).",
+      });
+      return;
+    }
+    setBrowseKind(kind);
+  };
+
+  const delegationTable = (rows: typeof browseQuery.data, loading: boolean, emptyHint: string) =>
+    loading ? (
+      <Skeleton className="h-32 w-full" />
+    ) : rows?.length ? (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>From</TableHead>
+            <TableHead>To</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Window</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {rows.map((d) => (
+            <TableRow key={d.id}>
+              <TableCell className="text-xs">
+                <div className="font-mono">{d.delegatedFromUserId}</div>
+                <div className="text-muted-foreground">{d.delegatedFromUsername ?? ""}</div>
+              </TableCell>
+              <TableCell className="text-xs">
+                <div className="font-mono">{d.delegatedToUserId}</div>
+                <div className="text-muted-foreground">{d.delegatedToUsername ?? ""}</div>
+              </TableCell>
+              <TableCell>{d.transactionType ?? "-"}</TableCell>
+              <TableCell className="text-xs text-muted-foreground">
+                {formatDateTime(d.validFrom)} &rarr; {formatDateTime(d.validUntil)}
+              </TableCell>
+              <TableCell>
+                <StatusBadge status={d.status} />
+              </TableCell>
+              <TableCell className="text-right">
+                <Can permissions={[Permissions.AdminDoaWrite]}>
+                  {d.status === "ACTIVE" ? (
+                    <Button variant="outline" size="sm" onClick={() => setRevokeId(d.id)}>
+                      Revoke
+                    </Button>
+                  ) : null}
+                </Can>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    ) : (
+      <EmptyState title="No delegations" description={emptyHint} />
+    );
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Delegations"
-        description="Active delegation of authority assignments between staff users."
+        description="Delegation of authority between staff users: lookup active chains, browse by user, or create."
         actions={
           <Can permissions={[Permissions.AdminDoaWrite]}>
             <CreateDelegationDialog />
           </Can>
         }
       />
+
       <Card>
-        <CardContent className="pt-6">
-          {isLoading ? (
-            <Skeleton className="h-32 w-full" />
-          ) : data?.length ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Delegator</TableHead>
-                  <TableHead>Delegatee</TableHead>
-                  <TableHead>Resource</TableHead>
-                  <TableHead>Window</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {data.map((d) => (
-                  <TableRow key={d.id}>
-                    <TableCell className="font-mono text-xs">{d.delegatorUserId}</TableCell>
-                    <TableCell className="font-mono text-xs">{d.delegateeUserId}</TableCell>
-                    <TableCell>{d.resourceType ?? "-"}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {formatDateTime(d.startsAt)} &rarr; {formatDateTime(d.endsAt)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={d.active ? "ACTIVE" : "REVOKED"} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Can permissions={[Permissions.AdminDoaWrite]}>
-                        {d.active ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setRevokeId(d.id)}
-                          >
-                            Revoke
-                          </Button>
-                        ) : null}
-                      </Can>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <EmptyState
-              title="No active delegations"
-              description="Create one to grant temporary authority to another staff user."
+        <CardHeader>
+          <CardTitle>Active for delegatee and transaction type</CardTitle>
+          <CardDescription>
+            Matches the supervisory check API: active delegations where the given user is the
+            delegatee for a specific transaction type.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <StaffUserField
+              id="delegatee-user"
+              label="Delegatee user"
+              className="space-y-1.5 md:w-[320px]"
+              inputClassName="font-mono"
+              value={activeDraft.delegateeUserId}
+              onChange={(v) => setActiveDraft((s) => ({ ...s, delegateeUserId: v }))}
             />
-          )}
+            <div className="space-y-1.5">
+              <Label>Transaction type</Label>
+              <Input
+                className="md:w-[260px]"
+                value={activeDraft.transactionType}
+                onChange={(e) =>
+                  setActiveDraft((s) => ({ ...s, transactionType: e.target.value }))
+                }
+              />
+            </div>
+            <Button type="button" onClick={runActiveLookup}>
+              <Search className="h-4 w-4" /> Lookup
+            </Button>
+          </div>
+          {activeLookup
+            ? delegationTable(
+                activeQuery.data,
+                activeQuery.isLoading,
+                "No active delegations match this delegatee and transaction type.",
+              )
+            : (
+              <p className="text-sm text-muted-foreground">
+                Enter a staff delegatee (UUID, username, or email) and transaction type, then run lookup.
+              </p>
+            )}
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Browse by staff user</CardTitle>
+          <CardDescription>Outgoing (granted by) or incoming (received by) delegations.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-end gap-3">
+            <StaffUserField
+              id="browse-staff-user"
+              label="Staff user"
+              className="space-y-1.5 md:w-[320px]"
+              inputClassName="font-mono"
+              value={browseUserId}
+              onChange={setBrowseUserId}
+            />
+            <Button type="button" variant="secondary" onClick={() => runBrowse("outgoing")}>
+              Load outgoing
+            </Button>
+            <Button type="button" variant="secondary" onClick={() => runBrowse("incoming")}>
+              Load incoming
+            </Button>
+          </div>
+          {browseKind
+            ? delegationTable(
+                browseQuery.data,
+                browseQuery.isFetching,
+                browseKind === "outgoing"
+                  ? "This user has not delegated authority to others (or none are returned)."
+                  : "No delegations target this user as delegatee.",
+              )
+            : (
+              <p className="text-sm text-muted-foreground">
+                Enter a staff user (UUID, username, or email) and choose outgoing or incoming.
+              </p>
+            )}
+        </CardContent>
+      </Card>
+
       <ConfirmAction
         open={Boolean(revokeId)}
         onOpenChange={(open) => !open && setRevokeId(null)}
         title="Revoke delegation"
-        description="Specify a reason that will be recorded in the audit trail."
+        description="This sets the delegation to revoked. The server does not accept an optional reason on this call."
         confirmLabel="Revoke"
         destructive
-        onConfirm={onRevoke}
+        onConfirm={async () => onRevoke()}
       />
     </div>
   );
@@ -160,25 +304,33 @@ function CreateDelegationDialog() {
   const form = useForm<CreateDelegationInput>({
     resolver: zodResolver(createDelegationSchema),
     defaultValues: {
-      delegatorUserId: "",
-      delegateeUserId: "",
-      resourceType: "",
-      startsAt: "",
-      endsAt: "",
-      reason: "",
+      delegatedFromUserId: "",
+      delegatedToUserId: "",
+      transactionType: "",
+      validFrom: "",
+      validUntil: "",
+      currency: "",
+      approvalLimit: "",
+      actingGlApprovalRole: "",
     },
   });
 
   const create = useMutation({
-    mutationFn: (input: CreateDelegationInput) =>
-      delegationsApi.create({
-        delegatorUserId: input.delegatorUserId,
-        delegateeUserId: input.delegateeUserId,
-        resourceType: input.resourceType || undefined,
-        startsAt: input.startsAt,
-        endsAt: input.endsAt,
-        reason: input.reason || undefined,
-      }),
+    mutationFn: (input: CreateDelegationInput) => {
+      const limitRaw = input.approvalLimit?.trim();
+      const approvalLimit =
+        limitRaw && Number.isFinite(Number(limitRaw)) ? Number(limitRaw) : undefined;
+      return delegationsApi.create({
+        delegatedFromUserId: input.delegatedFromUserId,
+        delegatedToUserId: input.delegatedToUserId,
+        transactionType: input.transactionType.trim(),
+        validFrom: input.validFrom,
+        validUntil: input.validUntil?.trim() || undefined,
+        currency: input.currency?.trim() || undefined,
+        approvalLimit,
+        actingGlApprovalRole: input.actingGlApprovalRole?.trim() || undefined,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["delegations"] });
       toast({ title: "Delegation created" });
@@ -200,60 +352,100 @@ function CreateDelegationDialog() {
           <Plus className="h-4 w-4" /> New delegation
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>New delegation</DialogTitle>
           <DialogDescription>
-            Authorise another staff user to act on the delegator&apos;s behalf for the chosen
-            resource type.
+            Delegated-from and delegated-to must be STAFF users. Enter a UUID, username, or email
+            fragment that uniquely resolves on the server; transaction type and validity window are
+            required. Optional monetary limit requires a 3-letter currency.
           </DialogDescription>
         </DialogHeader>
         <form className="grid gap-3" onSubmit={form.handleSubmit((v) => create.mutate(v))}>
+          <Controller
+            name="delegatedFromUserId"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <div className="space-y-1.5">
+                <StaffUserField
+                  id="delegation-from"
+                  label="Delegated from user"
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName="font-mono"
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                ) : null}
+              </div>
+            )}
+          />
+          <Controller
+            name="delegatedToUserId"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <div className="space-y-1.5">
+                <StaffUserField
+                  id="delegation-to"
+                  label="Delegated to user"
+                  value={field.value}
+                  onChange={field.onChange}
+                  inputClassName="font-mono"
+                />
+                {fieldState.error ? (
+                  <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                ) : null}
+              </div>
+            )}
+          />
           <div className="space-y-1.5">
-            <Label>Delegator user ID</Label>
-            <Input {...form.register("delegatorUserId")} placeholder="UUID" />
-            {form.formState.errors.delegatorUserId ? (
+            <Label>Transaction type</Label>
+            <Input {...form.register("transactionType")} placeholder="e.g. USER_PROVISIONING" />
+            {form.formState.errors.transactionType ? (
               <p className="text-xs text-destructive">
-                {form.formState.errors.delegatorUserId.message}
+                {form.formState.errors.transactionType.message}
               </p>
             ) : null}
-          </div>
-          <div className="space-y-1.5">
-            <Label>Delegatee user ID</Label>
-            <Input {...form.register("delegateeUserId")} placeholder="UUID" />
-            {form.formState.errors.delegateeUserId ? (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.delegateeUserId.message}
-              </p>
-            ) : null}
-          </div>
-          <div className="space-y-1.5">
-            <Label>Resource type (optional)</Label>
-            <Input {...form.register("resourceType")} placeholder="USER_PROVISIONING" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label>Starts at</Label>
-              <Input type="datetime-local" {...form.register("startsAt")} />
-              {form.formState.errors.startsAt ? (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.startsAt.message}
-                </p>
+              <Label>Valid from</Label>
+              <Input type="datetime-local" {...form.register("validFrom")} />
+              {form.formState.errors.validFrom ? (
+                <p className="text-xs text-destructive">{form.formState.errors.validFrom.message}</p>
               ) : null}
             </div>
             <div className="space-y-1.5">
-              <Label>Ends at</Label>
-              <Input type="datetime-local" {...form.register("endsAt")} />
-              {form.formState.errors.endsAt ? (
+              <Label>Valid until (optional)</Label>
+              <Input type="datetime-local" {...form.register("validUntil")} />
+              {form.formState.errors.validUntil ? (
                 <p className="text-xs text-destructive">
-                  {form.formState.errors.endsAt.message}
+                  {form.formState.errors.validUntil.message}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label>Currency (optional, max 3)</Label>
+              <Input {...form.register("currency")} placeholder="USD" maxLength={3} />
+              {form.formState.errors.currency ? (
+                <p className="text-xs text-destructive">{form.formState.errors.currency.message}</p>
+              ) : null}
+            </div>
+            <div className="space-y-1.5">
+              <Label>Approval limit (optional)</Label>
+              <Input {...form.register("approvalLimit")} placeholder="100000" />
+              {form.formState.errors.approvalLimit ? (
+                <p className="text-xs text-destructive">
+                  {form.formState.errors.approvalLimit.message}
                 </p>
               ) : null}
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label>Reason</Label>
-            <Textarea rows={2} {...form.register("reason")} />
+            <Label>Acting GL approval role (optional)</Label>
+            <Input {...form.register("actingGlApprovalRole")} />
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>

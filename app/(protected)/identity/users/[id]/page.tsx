@@ -20,6 +20,8 @@ import { usersApi } from "@/lib/api/modules/users";
 import { rolesApi } from "@/lib/api/modules/roles";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
+import { generateBankCompliantPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/schemas/password-policy";
+import { CUSTOMER_PORTAL_ROLE_NAME } from "@/lib/schemas/users";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -185,18 +187,23 @@ function UserDetail() {
         case "force-password-change":
           await usersApi.forcePasswordChange(id);
           break;
-        case "reset-password":
-          if (!resetPassword || resetPassword.length < 8) {
+        case "reset-password": {
+          const len = resetPassword.length;
+          if (!resetPassword || len < PASSWORD_MIN_LENGTH || len > PASSWORD_MAX_LENGTH) {
+            const tooLong = len > PASSWORD_MAX_LENGTH;
             toast({
               variant: "destructive",
-              title: "Password too short",
-              description: "Minimum length is 8 characters.",
+              title: tooLong ? "Password too long" : "Password too short",
+              description: tooLong
+                ? `Maximum length is ${PASSWORD_MAX_LENGTH} characters.`
+                : `Minimum length is ${PASSWORD_MIN_LENGTH} characters.`,
             });
             return;
           }
           await usersApi.resetPassword(id, { password: resetPassword });
           setResetPassword("");
           break;
+        }
         case "disable":
           await usersApi.setEnabled(id, false);
           break;
@@ -212,6 +219,28 @@ function UserDetail() {
         variant: "destructive",
         title: "Action failed",
         description: describeApiError(error),
+      });
+    }
+  };
+
+  const copyResetPasswordToClipboard = async () => {
+    const pw = resetPassword.trim();
+    if (!pw) {
+      toast({
+        variant: "destructive",
+        title: "Nothing to copy",
+        description: "Enter or generate a password first.",
+      });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(pw);
+      toast({ title: "Copied", description: "New password copied to clipboard." });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Copy failed",
+        description: "Clipboard access was denied or is unavailable.",
       });
     }
   };
@@ -238,6 +267,7 @@ function UserDetail() {
   }
 
   const user = userQuery.data;
+  const isCustomer = user.userType === "CUSTOMER";
 
   return (
     <div className="space-y-6">
@@ -325,8 +355,12 @@ function UserDetail() {
           <Detail label="Provisioning"><StatusBadge status={user.provisioningStatus ?? "-"} /></Detail>
           <Detail label="MFA"><StatusBadge status={user.mfaEnabled ? "VERIFIED" : "NOT ENABLED"} variantOverride={user.mfaEnabled ? "success" : "muted"} /></Detail>
           <Detail label="Branch">{user.branchCode ?? "-"}</Detail>
-          <Detail label="Employee ID">{user.employeeId ?? "-"}</Detail>
-          <Detail label="GL approval role">{user.glApprovalRole ?? "-"}</Detail>
+          {!isCustomer ? (
+            <>
+              <Detail label="Employee ID">{user.employeeId ?? "-"}</Detail>
+              <Detail label="GL approval role">{user.glApprovalRole ?? "-"}</Detail>
+            </>
+          ) : null}
         </CardContent>
         {user.provisioningStatus === "PENDING" ? (
           <CardContent className="flex flex-wrap gap-2 border-t pt-4">
@@ -352,7 +386,11 @@ function UserDetail() {
           <TabsTrigger value="access">Access details</TabsTrigger>
         </TabsList>
         <TabsContent value="roles">
-          <UserRolesEditor userId={id} currentRoles={user.roles ?? []} />
+          <UserRolesEditor
+            userId={id}
+            userType={user.userType}
+            currentRoles={user.roles ?? []}
+          />
         </TabsContent>
         <TabsContent value="access">
           <UserAccessEditor user={user} />
@@ -388,14 +426,38 @@ function UserDetail() {
             {action === "reset-password" ? (
               <div className="space-y-1">
                 <Label htmlFor="newPassword" className="text-xs">
-                  New password (min 8 chars)
+                  New password ({PASSWORD_MIN_LENGTH}-{PASSWORD_MAX_LENGTH} chars)
                 </Label>
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={resetPassword}
-                  onChange={(e) => setResetPassword(e.target.value)}
-                />
+                <div className="flex flex-wrap gap-2">
+                  <Input
+                    id="newPassword"
+                    type="text"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="min-w-0 flex-1 font-mono text-sm"
+                    maxLength={PASSWORD_MAX_LENGTH}
+                    value={resetPassword}
+                    onChange={(e) => setResetPassword(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    onClick={() => setResetPassword(generateBankCompliantPassword())}
+                  >
+                    Generate
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="shrink-0"
+                    disabled={!resetPassword.trim()}
+                    title="Copy password to clipboard"
+                    onClick={() => void copyResetPasswordToClipboard()}
+                  >
+                    Copy
+                  </Button>
+                </div>
               </div>
             ) : null}
           </div>
@@ -420,15 +482,38 @@ function Detail({ label, children }: { label: string; children: React.ReactNode 
   );
 }
 
-function UserRolesEditor({ userId, currentRoles }: { userId: string; currentRoles: string[] }) {
+function UserRolesEditor({
+  userId,
+  userType,
+  currentRoles,
+}: {
+  userId: string;
+  userType: string;
+  currentRoles: string[];
+}) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const rolesQuery = useQuery({ queryKey: ["roles"], queryFn: rolesApi.list });
   const [selected, setSelected] = React.useState<string[]>(currentRoles);
 
+  const customerPortalUpper = CUSTOMER_PORTAL_ROLE_NAME.toUpperCase();
+  const isCustomer = userType === "CUSTOMER";
+
+  const visibleRoles = React.useMemo(() => {
+    const all = rolesQuery.data ?? [];
+    if (isCustomer) {
+      return all.filter((r) => r.name.toUpperCase() === customerPortalUpper);
+    }
+    return all.filter((r) => r.name.toUpperCase() !== customerPortalUpper);
+  }, [rolesQuery.data, isCustomer, customerPortalUpper]);
+
   React.useEffect(() => {
-    setSelected(currentRoles);
-  }, [currentRoles]);
+    if (isCustomer) {
+      setSelected(currentRoles.filter((r) => r.toUpperCase() === customerPortalUpper));
+    } else {
+      setSelected(currentRoles.filter((r) => r.toUpperCase() !== customerPortalUpper));
+    }
+  }, [currentRoles, isCustomer, customerPortalUpper]);
 
   const setRoles = useMutation({
     mutationFn: () => usersApi.setRoles(userId, selected),
@@ -450,15 +535,23 @@ function UserRolesEditor({ userId, currentRoles }: { userId: string; currentRole
       <CardHeader>
         <CardTitle>Role assignment</CardTitle>
         <CardDescription>
-          Replaces the user&apos;s assigned roles via `PUT /users/{userId}/roles`.
+          {isCustomer
+            ? `Customer accounts may only hold the ${CUSTOMER_PORTAL_ROLE_NAME} portal role.`
+            : `Staff roles (admin portal). The ${CUSTOMER_PORTAL_ROLE_NAME} role is reserved for customer users.`}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {rolesQuery.isLoading ? (
           <Skeleton className="h-32 w-full" />
+        ) : visibleRoles.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {isCustomer
+              ? `No "${CUSTOMER_PORTAL_ROLE_NAME}" role is defined in the directory. Add it under Identity → Roles, or adjust identity.rbac.customer-portal-role-name on the server.`
+              : "No assignable roles returned from the API."}
+          </p>
         ) : (
           <div className="grid gap-2 md:grid-cols-3">
-            {rolesQuery.data?.map((role) => {
+            {visibleRoles.map((role) => {
               const checked = selected.includes(role.name);
               return (
                 <label
@@ -494,7 +587,21 @@ function UserRolesEditor({ userId, currentRoles }: { userId: string; currentRole
   );
 }
 
-function UserAccessEditor({ user }: { user: { id: string; email?: string; branchCode?: string; employeeId?: string; glApprovalRole?: string; customerPartyId?: string; accountExpiresAt?: string } }) {
+function UserAccessEditor({
+  user,
+}: {
+  user: {
+    id: string;
+    userType?: string;
+    email?: string;
+    branchCode?: string;
+    employeeId?: string;
+    glApprovalRole?: string;
+    customerPartyId?: string;
+    accountExpiresAt?: string;
+  };
+}) {
+  const isCustomer = user.userType === "CUSTOMER";
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [draft, setDraft] = React.useState({
@@ -511,8 +618,12 @@ function UserAccessEditor({ user }: { user: { id: string; email?: string; branch
       usersApi.updateAccess(user.id, {
         email: draft.email || undefined,
         branchCode: draft.branchCode || undefined,
-        employeeId: draft.employeeId || undefined,
-        glApprovalRole: draft.glApprovalRole || undefined,
+        ...(isCustomer
+          ? {}
+          : {
+              employeeId: draft.employeeId || undefined,
+              glApprovalRole: draft.glApprovalRole || undefined,
+            }),
         customerPartyId: draft.customerPartyId || undefined,
         accountExpiresAt: draft.accountExpiresAt || undefined,
       }),
@@ -545,18 +656,22 @@ function UserAccessEditor({ user }: { user: { id: string; email?: string; branch
             onChange={(e) => setDraft({ ...draft, branchCode: e.target.value })}
           />
         </Field>
-        <Field label="Employee ID">
-          <Input
-            value={draft.employeeId}
-            onChange={(e) => setDraft({ ...draft, employeeId: e.target.value })}
-          />
-        </Field>
-        <Field label="GL approval role">
-          <Input
-            value={draft.glApprovalRole}
-            onChange={(e) => setDraft({ ...draft, glApprovalRole: e.target.value })}
-          />
-        </Field>
+        {!isCustomer ? (
+          <>
+            <Field label="Employee ID">
+              <Input
+                value={draft.employeeId}
+                onChange={(e) => setDraft({ ...draft, employeeId: e.target.value })}
+              />
+            </Field>
+            <Field label="GL approval role">
+              <Input
+                value={draft.glApprovalRole}
+                onChange={(e) => setDraft({ ...draft, glApprovalRole: e.target.value })}
+              />
+            </Field>
+          </>
+        ) : null}
         <Field label="Customer party ID">
           <Input
             value={draft.customerPartyId}

@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -10,6 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -46,11 +55,18 @@ function ApprovalWorkflowsContent() {
   const { toast } = useToast();
   const [resourceType, setResourceType] = React.useState("USER_PROVISIONING");
   const [filterDraft, setFilterDraft] = React.useState(resourceType);
+  const [detailId, setDetailId] = React.useState<string | null>(null);
 
   const query = useQuery({
     queryKey: ["approval-workflows", resourceType],
     queryFn: () => approvalWorkflowsApi.listByResource(resourceType),
     enabled: Boolean(resourceType),
+  });
+
+  const detailQuery = useQuery({
+    queryKey: ["approval-workflows", "detail", detailId],
+    queryFn: () => approvalWorkflowsApi.get(detailId!),
+    enabled: Boolean(detailId),
   });
 
   const [pending, setPending] = React.useState<{
@@ -63,8 +79,10 @@ function ApprovalWorkflowsContent() {
       const body = { comment: comment || undefined };
       if (kind === "approve") await approvalWorkflowsApi.approve(id, body);
       if (kind === "reject") await approvalWorkflowsApi.reject(id, body);
-      if (kind === "cancel") await approvalWorkflowsApi.cancel(id, body);
-      toast({ title: `Workflow ${kind}d` });
+      if (kind === "cancel") await approvalWorkflowsApi.cancel(id);
+      const done =
+        kind === "approve" ? "approved" : kind === "reject" ? "rejected" : "cancelled";
+      toast({ title: `Workflow ${done}` });
       queryClient.invalidateQueries({ queryKey: ["approval-workflows"] });
     } catch (error) {
       toast({
@@ -80,6 +98,11 @@ function ApprovalWorkflowsContent() {
       <PageHeader
         title="Approval workflows"
         description="Multi-step approval chains for resource governance and identity changes."
+        actions={
+          <Can permissions={[Permissions.AdminDoaWrite]}>
+            <StartWorkflowDialog currentResourceType={resourceType} />
+          </Can>
+        }
       />
       <Card>
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
@@ -121,6 +144,7 @@ function ApprovalWorkflowsContent() {
                   <ApprovalRow
                     key={wf.id}
                     wf={wf}
+                    onView={() => setDetailId(wf.id)}
                     onAction={(kind) => setPending({ id: wf.id, kind })}
                   />
                 ))}
@@ -129,11 +153,28 @@ function ApprovalWorkflowsContent() {
           ) : (
             <EmptyState
               title="No workflows for this resource type"
-              description="Try a different resource type or create one via the related resource."
+              description="Try another resource type, or use Start workflow to create one."
             />
           )}
         </CardContent>
       </Card>
+      <Dialog open={Boolean(detailId)} onOpenChange={(open) => !open && setDetailId(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Workflow detail</DialogTitle>
+            <DialogDescription>
+              Latest server state including each step in the chain.
+            </DialogDescription>
+          </DialogHeader>
+          {detailQuery.isLoading ? (
+            <Skeleton className="h-24 w-full" />
+          ) : detailQuery.data ? (
+            <WorkflowDetailBody wf={detailQuery.data} />
+          ) : (
+            <p className="text-sm text-muted-foreground">Could not load workflow.</p>
+          )}
+        </DialogContent>
+      </Dialog>
       <ConfirmAction
         open={Boolean(pending)}
         onOpenChange={(open) => !open && setPending(null)}
@@ -144,7 +185,11 @@ function ApprovalWorkflowsContent() {
               ? "Reject workflow"
               : "Cancel workflow"
         }
-        description="Comment is recorded on the timeline (max 500 characters)."
+        description={
+          pending?.kind === "cancel"
+            ? "This cancels the workflow on the server. No comment is accepted for this action."
+            : "Comment is recorded on the timeline (max 500 characters)."
+        }
         confirmLabel={
           pending?.kind === "approve"
             ? "Approve"
@@ -153,7 +198,7 @@ function ApprovalWorkflowsContent() {
               : "Cancel workflow"
         }
         destructive={pending?.kind !== "approve"}
-        reasonLabel="Comment"
+        reasonLabel={pending?.kind === "cancel" ? undefined : "Comment"}
         reasonRequired={pending?.kind === "reject"}
         onConfirm={async (comment) => {
           if (pending) await onAction(pending.kind, pending.id, comment);
@@ -163,11 +208,153 @@ function ApprovalWorkflowsContent() {
   );
 }
 
+function WorkflowDetailBody({ wf }: { wf: ApprovalWorkflow }) {
+  return (
+    <div className="space-y-3 text-sm">
+      <div className="grid gap-1">
+        <span className="text-muted-foreground">ID</span>
+        <span className="font-mono text-xs break-all">{wf.id}</span>
+      </div>
+      <div className="grid gap-1">
+        <span className="text-muted-foreground">Resource</span>
+        <span>
+          {wf.resourceType} / <span className="font-mono text-xs">{wf.resourceId}</span>
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-muted-foreground">Status</span>
+        <StatusBadge status={wf.status} />
+      </div>
+      <div className="grid gap-1">
+        <span className="text-muted-foreground">Steps</span>
+        <ol className="list-decimal space-y-2 pl-4">
+          {wf.steps.map((s) => (
+            <li key={s.stepNumber} className="text-xs">
+              <div>
+                Step {s.stepNumber}: {s.requiredRole}{" "}
+                <StatusBadge status={s.status} />
+              </div>
+              {s.actorUserId ? (
+                <div className="font-mono text-muted-foreground">Actor {s.actorUserId}</div>
+              ) : null}
+              {s.comment ? <div className="text-muted-foreground">{s.comment}</div> : null}
+              {s.decidedAt ? (
+                <div className="text-muted-foreground">{formatDateTime(s.decidedAt)}</div>
+              ) : null}
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+function StartWorkflowDialog({ currentResourceType }: { currentResourceType: string }) {
+  const [open, setOpen] = React.useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [resourceType, setResourceType] = React.useState(currentResourceType);
+  const [resourceId, setResourceId] = React.useState("");
+  const [rolesCsv, setRolesCsv] = React.useState("");
+
+  React.useEffect(() => {
+    if (open) setResourceType(currentResourceType);
+  }, [open, currentResourceType]);
+
+  const start = useMutation({
+    mutationFn: () => {
+      const requiredGlRolesInOrder = rolesCsv
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (!requiredGlRolesInOrder.length) {
+        throw new Error("Enter at least one GL role in order (comma-separated).");
+      }
+      return approvalWorkflowsApi.create({
+        resourceType: resourceType.trim(),
+        resourceId: resourceId.trim(),
+        requiredGlRolesInOrder,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["approval-workflows"] });
+      toast({ title: "Workflow started" });
+      setResourceId("");
+      setRolesCsv("");
+      setOpen(false);
+    },
+    onError: (error) =>
+      toast({
+        variant: "destructive",
+        title: "Could not start workflow",
+        description: error instanceof Error ? error.message : describeApiError(error),
+      }),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button>
+          <Plus className="h-4 w-4" /> Start workflow
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Start approval workflow</DialogTitle>
+          <DialogDescription>
+            Calls <span className="font-mono">POST /api/v1/identity/approval-workflows</span> with an
+            ordered list of GL roles (each approver step).
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="space-y-1.5">
+            <Label>Resource type</Label>
+            <Input value={resourceType} onChange={(e) => setResourceType(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Resource ID</Label>
+            <Input
+              className="font-mono text-xs"
+              value={resourceId}
+              onChange={(e) => setResourceId(e.target.value)}
+              placeholder="Logical id for the governed resource"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Required GL roles (in order)</Label>
+            <Input
+              value={rolesCsv}
+              onChange={(e) => setRolesCsv(e.target.value)}
+              placeholder="MANAGER, CFO"
+            />
+            <p className="text-xs text-muted-foreground">Comma-separated; order defines the chain.</p>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+            Close
+          </Button>
+          <Button
+            type="button"
+            loading={start.isPending}
+            onClick={() => start.mutate()}
+            disabled={!resourceType.trim() || !resourceId.trim()}
+          >
+            Start
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ApprovalRow({
   wf,
+  onView,
   onAction,
 }: {
   wf: ApprovalWorkflow;
+  onView: () => void;
   onAction: (kind: ActionKind) => void;
 }) {
   return (
@@ -189,7 +376,10 @@ function ApprovalRow({
         {formatDateTime(wf.createdAt)}
       </TableCell>
       <TableCell className="text-right">
-        <div className="flex justify-end gap-1">
+        <div className="flex flex-wrap justify-end gap-1">
+          <Button size="sm" variant="ghost" onClick={onView}>
+            Details
+          </Button>
           <Can permissions={[Permissions.AdminDoaWrite, Permissions.GlApprove]} mode="any">
             <Button size="sm" variant="success" onClick={() => onAction("approve")}>
               Approve

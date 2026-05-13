@@ -1,24 +1,32 @@
 import { api } from "@/lib/api/client";
 import type { PageRequest, PageResponse } from "@/lib/api/query";
+import type { UserSummary } from "@/lib/api/modules/users";
 
 export interface AuditEvent {
   id: string;
   timestamp: string;
+  userId?: string;
+  username?: string;
   eventType: string;
-  result?: string;
-  actorUserId?: string;
-  actorUsername?: string;
-  targetType?: string;
-  targetId?: string;
   ipAddress?: string;
   userAgent?: string;
-  details?: Record<string, unknown>;
+  details?: string;
+  detailsJson?: Record<string, unknown>;
+  changedByUserId?: string;
+  changedByUsername?: string;
+  previousValue?: string;
+  currentValue?: string;
+  approvedByUserId?: string;
+  approvedByUsername?: string;
+  approvalDate?: string;
 }
 
+/** Mirrors `GET /api/v1/identity/audit/events` query params. */
 export interface AuditQuery {
+  userId?: string;
   eventType?: string;
   username?: string;
-  result?: string;
+  ipAddress?: string;
   from?: string;
   to?: string;
 }
@@ -32,6 +40,11 @@ export const auditApi = {
         size: page?.size,
         sort: page?.sort,
       },
+    }),
+  /** Typeahead for audit filters ({@code audit:read}); all user types. */
+  suggestUsers: (q: string, limit = 15) =>
+    api.get<UserSummary[]>("/api/v1/identity/audit/suggestions/users", {
+      query: { q: q.trim(), limit },
     }),
 };
 

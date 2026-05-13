@@ -43,12 +43,17 @@ export function Sidebar() {
               mode="any"
             >
               <AccordionItem value={section.id} className="rounded-md border-0">
-                <AccordionTrigger className="rounded-md hover:bg-accent">
-                  <span className="flex items-center gap-2">
+                <AccordionTrigger className="items-start rounded-md py-2 hover:bg-accent [&>svg]:mt-1">
+                  <span className="flex min-w-0 flex-1 items-start gap-2 text-left">
                     {section.icon ? (
-                      <section.icon className="h-4 w-4 text-muted-foreground" />
+                      <section.icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     ) : null}
-                    <span>{section.label}</span>
+                    <span
+                      className="line-clamp-2 min-w-0 flex-1 text-sm font-medium leading-snug"
+                      title={section.title ?? section.label}
+                    >
+                      {section.label}
+                    </span>
                   </span>
                 </AccordionTrigger>
                 <AccordionContent className="pl-3">
@@ -64,6 +69,7 @@ export function Sidebar() {
                             href={item.href}
                             icon={item.icon ? <item.icon className="h-4 w-4" /> : null}
                             label={item.label}
+                            title={item.title}
                             active={pathname === item.href || (pathname?.startsWith(`${item.href}/`) ?? false)}
                           />
                         </li>
@@ -86,26 +92,29 @@ export function Sidebar() {
 function SidebarLink({
   href,
   label,
+  title,
   icon,
   active,
 }: {
   href: string;
   label: string;
+  title?: string;
   icon?: React.ReactNode;
   active?: boolean;
 }) {
   return (
     <Link
       href={href}
+      title={title ?? label}
       className={cn(
-        "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
+        "flex min-w-0 items-start gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
         active
           ? "bg-primary/10 font-medium text-primary"
           : "text-foreground/80 hover:bg-accent hover:text-accent-foreground",
       )}
     >
-      {icon ? <span className="text-muted-foreground">{icon}</span> : null}
-      <span>{label}</span>
+      {icon ? <span className="mt-0.5 shrink-0 text-muted-foreground">{icon}</span> : null}
+      <span className="line-clamp-2 min-w-0 flex-1 leading-snug">{label}</span>
     </Link>
   );
 }

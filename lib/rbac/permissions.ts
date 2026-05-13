@@ -20,10 +20,17 @@ export const Permissions = {
   HolidayRead: "holiday:read",
   FeeRead: "fee:read",
   VelocityLimitRead: "velocity-limit:read",
+  ExchangeRateRead: "exchange-rate:read",
+  ExchangeRateWrite: "exchange-rate:write",
   CompensationRead: "compensation:read",
   PaymentInitiate: "payment:initiate",
   GlRead: "gl:read",
   GlApprove: "gl:approve",
+  CustomerRead: "customer:read",
+  CustomerWrite: "customer:write",
+  CustomerPiiRead: "customer:pii:read",
+  AccountRead: "account:read",
+  AccountWrite: "account:write",
 } as const;
 
 export type PermissionKey = keyof typeof Permissions;

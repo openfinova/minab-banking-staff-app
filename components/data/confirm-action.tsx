@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z, type ZodSchema } from "zod";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -14,10 +13,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 interface ConfirmActionProps {
   open: boolean;
@@ -71,7 +69,12 @@ export function ConfirmAction({
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
-        <form onSubmit={form.handleSubmit(submit)} className="space-y-4">
+        {/*
+          Avoid <form> + AlertDialogAction type="submit": Radix closes the dialog on Action
+          click, which disconnects the form while the browser is still finishing submission
+          (“Form submission canceled because the form is not connected”).
+        */}
+        <div className="space-y-4">
           <AlertDialogHeader>
             <AlertDialogTitle>{title}</AlertDialogTitle>
             {description ? (
@@ -99,19 +102,19 @@ export function ConfirmAction({
           ) : null}
           <AlertDialogFooter>
             <AlertDialogCancel type="button">{cancelLabel}</AlertDialogCancel>
-            <AlertDialogAction
-              type="submit"
-              className={cn(
-                destructive
-                  ? buttonVariants({ variant: "destructive" })
-                  : buttonVariants({ variant: "default" }),
-              )}
+            <Button
+              type="button"
+              variant={destructive ? "destructive" : "default"}
               disabled={form.formState.isSubmitting}
+              onClick={(e) => {
+                e.preventDefault();
+                void form.handleSubmit(submit)();
+              }}
             >
               {confirmLabel}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
-        </form>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );

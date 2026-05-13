@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [hydrate, scheduleRefresh]);
 
   const loginWithRedirect = React.useCallback(async (returnTo?: string) => {
+    useAuthStore.getState().setError(null);
     if (returnTo) setReturnTo(returnTo);
     setStatus("loading");
     const url = await startLogin();

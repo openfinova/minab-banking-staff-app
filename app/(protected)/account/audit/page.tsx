@@ -2,12 +2,13 @@
 
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Search } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
-import { meApi } from "@/lib/api/modules/me";
+import { meApi, type OwnAuditQuery } from "@/lib/api/modules/me";
 import {
   Table,
   TableBody,
@@ -20,6 +21,9 @@ import { Pagination } from "@/components/data/pagination";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function MyAuditPage() {
   return (
@@ -32,18 +36,77 @@ export default function MyAuditPage() {
 function MyAuditContent() {
   const [page, setPage] = React.useState(0);
   const size = 20;
+  const [filters, setFilters] = React.useState<OwnAuditQuery>({});
+  const [draft, setDraft] = React.useState<OwnAuditQuery>({});
 
   const { data, isLoading } = useQuery({
-    queryKey: ["me", "audit", page, size],
-    queryFn: () => meApi.auditEvents({ page, size, sort: "timestamp,desc" }),
+    queryKey: ["me", "audit", page, size, filters],
+    queryFn: () =>
+      meApi.auditEvents({ page, size, sort: "createdAt,desc" }, filters),
   });
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="My audit events"
-        description="Audit trail entries that reference your account."
+        description="Security audit entries recorded for your user (same model as the admin audit API, scoped to you)."
       />
+      <Card>
+        <CardContent className="grid gap-3 pt-6 md:grid-cols-2 lg:grid-cols-4">
+          <Field label="Event type">
+            <Input
+              value={draft.eventType ?? ""}
+              onChange={(e) => setDraft({ ...draft, eventType: e.target.value })}
+              placeholder="LOGIN_SUCCESS"
+            />
+          </Field>
+          <Field label="IP address">
+            <Input
+              className="font-mono text-xs"
+              value={draft.ipAddress ?? ""}
+              onChange={(e) => setDraft({ ...draft, ipAddress: e.target.value })}
+            />
+          </Field>
+          <Field label="From">
+            <Input
+              type="datetime-local"
+              value={draft.from ?? ""}
+              onChange={(e) => setDraft({ ...draft, from: e.target.value })}
+            />
+          </Field>
+          <Field label="To">
+            <Input
+              type="datetime-local"
+              value={draft.to ?? ""}
+              onChange={(e) => setDraft({ ...draft, to: e.target.value })}
+            />
+          </Field>
+          <div className="md:col-span-2 lg:col-span-4 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setFilters(draft);
+                setPage(0);
+              }}
+            >
+              <Search className="h-4 w-4" /> Apply filters
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setDraft({});
+                setFilters({});
+                setPage(0);
+              }}
+            >
+              Clear
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle>Recent activity</CardTitle>
@@ -58,7 +121,7 @@ function MyAuditContent() {
                   <TableRow>
                     <TableHead>Timestamp</TableHead>
                     <TableHead>Event</TableHead>
-                    <TableHead>Result</TableHead>
+                    <TableHead>Details</TableHead>
                     <TableHead>IP address</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -68,17 +131,13 @@ function MyAuditContent() {
                       <TableCell className="font-mono text-xs">
                         {formatDateTime(event.timestamp)}
                       </TableCell>
-                      <TableCell>{event.eventType}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant={event.result === "FAILURE" ? "destructive" : "muted"}
-                        >
-                          {event.result ?? "-"}
-                        </Badge>
+                        <Badge variant="muted">{event.eventType}</Badge>
                       </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {event.ipAddress ?? "-"}
+                      <TableCell className="max-w-[240px] truncate text-xs" title={event.details}>
+                        {event.details ?? "-"}
                       </TableCell>
+                      <TableCell className="font-mono text-xs">{event.ipAddress ?? "-"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -97,6 +156,15 @@ function MyAuditContent() {
           )}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
+      {children}
     </div>
   );
 }

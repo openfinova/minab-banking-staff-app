@@ -13,6 +13,8 @@ export interface UserSummary {
   id: string;
   username: string;
   email?: string;
+  /** Present when this login is already tied to a customer party (search/list responses). */
+  customerPartyId?: string;
   userType: UserType;
   enabled: boolean;
   locked: boolean;
@@ -27,7 +29,6 @@ export interface UserSummary {
 }
 
 export interface UserDetail extends UserSummary {
-  customerPartyId?: string;
   accountExpiresAt?: string;
   provisioningEligibilityNotes?: string;
   forcePasswordChange?: boolean;
@@ -58,6 +59,8 @@ export interface UpdateUserAccessRequest {
 }
 
 export interface UserSearchCriteria {
+  /** Free text: identity user UUID, or partial match on username / email (server-defined). */
+  q?: string;
   username?: string;
   email?: string;
   userType?: UserType;
@@ -84,6 +87,8 @@ export const usersApi = {
       },
     }),
   get: (id: string) => api.get<UserDetail>(`/api/v1/identity/users/${id}`),
+  getByCustomerPartyId: (customerPartyId: string) =>
+    api.get<UserDetail>(`/api/v1/identity/users/by-customer/${customerPartyId}`),
   create: (body: CreateUserRequest) =>
     api.post<UserDetail>("/api/v1/identity/users", body),
   updateAccess: (id: string, body: UpdateUserAccessRequest) =>

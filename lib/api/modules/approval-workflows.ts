@@ -57,9 +57,6 @@ export const approvalWorkflowsApi = {
       `/api/v1/identity/approval-workflows/${id}/reject`,
       body,
     ),
-  cancel: (id: string, body?: WorkflowActionRequest) =>
-    api.post<ApprovalWorkflow>(
-      `/api/v1/identity/approval-workflows/${id}/cancel`,
-      body,
-    ),
+  cancel: (id: string) =>
+    api.post<ApprovalWorkflow>(`/api/v1/identity/approval-workflows/${id}/cancel`),
 };

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Plus, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
@@ -33,6 +34,8 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
 import { usersApi, type UserSearchCriteria } from "@/lib/api/modules/users";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/ui/use-toast";
+import { describeApiError } from "@/lib/api/errors";
 
 export default function UsersPage() {
   return (
@@ -42,9 +45,15 @@ export default function UsersPage() {
   );
 }
 
+const CUSTOMER_PARTY_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 function UsersList() {
+  const router = useRouter();
+  const { toast } = useToast();
   const [criteria, setCriteria] = React.useState<UserSearchCriteria>({});
   const [draft, setDraft] = React.useState<UserSearchCriteria>({});
+  const [customerPartyId, setCustomerPartyId] = React.useState("");
   const [page, setPage] = React.useState(0);
   const size = 20;
 
@@ -138,6 +147,43 @@ function UsersList() {
               aria-label="Refresh"
             >
               <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+            </Button>
+          </div>
+          <div className="flex flex-wrap items-end gap-2 border-t pt-4">
+            <Field label="Open by customer party ID">
+              <Input
+                className="font-mono md:w-[360px]"
+                value={customerPartyId}
+                onChange={(e) => setCustomerPartyId(e.target.value)}
+                placeholder="Customer party UUID"
+              />
+            </Field>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={async () => {
+                const id = customerPartyId.trim();
+                if (!CUSTOMER_PARTY_UUID_RE.test(id)) {
+                  toast({
+                    variant: "destructive",
+                    title: "Invalid customer party ID",
+                    description: "Enter a valid UUID.",
+                  });
+                  return;
+                }
+                try {
+                  const user = await usersApi.getByCustomerPartyId(id);
+                  router.push(`/identity/users/${user.id}`);
+                } catch (error) {
+                  toast({
+                    variant: "destructive",
+                    title: "User not found",
+                    description: describeApiError(error),
+                  });
+                }
+              }}
+            >
+              Open user
             </Button>
           </div>
         </CardContent>

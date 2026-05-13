@@ -24,6 +24,17 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
 import { auditApi, type AuditQuery } from "@/lib/api/modules/audit";
 import { formatDateTime } from "@/lib/utils";
+import { StaffUserField } from "@/components/identity/staff-user-field";
+
+const USER_FILTER_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function userFilterToQuery(userFilter: string): Pick<AuditQuery, "userId" | "username"> {
+  const t = userFilter.trim();
+  if (!t) return {};
+  if (USER_FILTER_UUID_RE.test(t)) return { userId: t };
+  return { username: t };
+}
 
 export default function AuditPage() {
   return (
@@ -36,40 +47,45 @@ export default function AuditPage() {
 function AuditContent() {
   const [query, setQuery] = React.useState<AuditQuery>({});
   const [draft, setDraft] = React.useState<AuditQuery>({});
+  const [userFilter, setUserFilter] = React.useState("");
   const [page, setPage] = React.useState(0);
   const size = 25;
 
   const search = useQuery({
     queryKey: ["audit", query, page, size],
-    queryFn: () => auditApi.search(query, { page, size, sort: "timestamp,desc" }),
+    queryFn: () => auditApi.search(query, { page, size, sort: "createdAt,desc" }),
   });
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Security audit events"
-        description="Search system-wide audit trail entries by actor, time window, and outcome."
+        description="Search system-wide security audit entries. Pick a user from suggestions (UUID filter) or enter a username for an exact match, plus event type, IP, and time window."
       />
       <Card>
-        <CardContent className="grid gap-3 pt-6 md:grid-cols-3 lg:grid-cols-5">
-          <Field label="Username">
-            <Input
-              value={draft.username ?? ""}
-              onChange={(e) => setDraft({ ...draft, username: e.target.value })}
-            />
-          </Field>
+        <CardContent className="grid items-end gap-3 pt-6 md:grid-cols-3 lg:grid-cols-6">
+          <StaffUserField
+            id="audit-user-filter"
+            label="User"
+            suggestionSource="audit"
+            className="md:col-span-2"
+            labelClassName="text-xs uppercase tracking-wide text-muted-foreground"
+            inputClassName="font-mono text-xs"
+            value={userFilter}
+            onChange={setUserFilter}
+          />
           <Field label="Event type">
             <Input
               value={draft.eventType ?? ""}
               onChange={(e) => setDraft({ ...draft, eventType: e.target.value })}
-              placeholder="USER_LOGIN"
+              placeholder="LOGIN_SUCCESS"
             />
           </Field>
-          <Field label="Result">
+          <Field label="IP address">
             <Input
-              value={draft.result ?? ""}
-              onChange={(e) => setDraft({ ...draft, result: e.target.value })}
-              placeholder="SUCCESS"
+              className="font-mono text-xs"
+              value={draft.ipAddress ?? ""}
+              onChange={(e) => setDraft({ ...draft, ipAddress: e.target.value })}
             />
           </Field>
           <Field label="From">
@@ -86,10 +102,11 @@ function AuditContent() {
               onChange={(e) => setDraft({ ...draft, to: e.target.value })}
             />
           </Field>
-          <div className="md:col-span-3 lg:col-span-5 flex flex-wrap gap-2">
+          <div className="md:col-span-3 lg:col-span-6 flex flex-wrap gap-2">
             <Button
               onClick={() => {
-                setQuery(draft);
+                const u = userFilterToQuery(userFilter);
+                setQuery({ ...draft, ...u });
                 setPage(0);
               }}
             >
@@ -98,6 +115,7 @@ function AuditContent() {
             <Button
               variant="ghost"
               onClick={() => {
+                setUserFilter("");
                 setDraft({});
                 setQuery({});
                 setPage(0);
@@ -119,9 +137,9 @@ function AuditContent() {
                   <TableRow>
                     <TableHead>Timestamp</TableHead>
                     <TableHead>Event</TableHead>
-                    <TableHead>Result</TableHead>
-                    <TableHead>Actor</TableHead>
-                    <TableHead>Target</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Changed by</TableHead>
+                    <TableHead>Details</TableHead>
                     <TableHead>IP</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -131,28 +149,20 @@ function AuditContent() {
                       <TableCell className="font-mono text-xs">
                         {formatDateTime(event.timestamp)}
                       </TableCell>
-                      <TableCell>{event.eventType}</TableCell>
                       <TableCell>
-                        <Badge
-                          variant={
-                            event.result === "SUCCESS"
-                              ? "success"
-                              : event.result === "FAILURE"
-                                ? "destructive"
-                                : "muted"
-                          }
-                        >
-                          {event.result ?? "-"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {event.actorUsername ?? event.actorUserId ?? "-"}
+                        <Badge variant="muted">{event.eventType}</Badge>
                       </TableCell>
                       <TableCell className="text-xs">
-                        {event.targetType ?? "-"}{" "}
-                        {event.targetId ? (
-                          <span className="font-mono text-muted-foreground">{event.targetId}</span>
+                        {event.username ?? "-"}
+                        {event.userId ? (
+                          <div className="font-mono text-muted-foreground">{event.userId}</div>
                         ) : null}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {event.changedByUsername ?? event.changedByUserId ?? "-"}
+                      </TableCell>
+                      <TableCell className="max-w-[220px] truncate text-xs" title={event.details}>
+                        {event.details ?? "-"}
                       </TableCell>
                       <TableCell className="font-mono text-xs">{event.ipAddress ?? "-"}</TableCell>
                     </TableRow>

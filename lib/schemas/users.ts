@@ -1,17 +1,19 @@
 import { z } from "zod";
 
+import { bankPasswordStringSchema } from "@/lib/schemas/password-policy";
+
 export const userTypes = ["STAFF", "CUSTOMER"] as const;
 export type UserTypeSchema = (typeof userTypes)[number];
+
+/** Must match backend default `RbacProperties.customerPortalRoleName`. */
+export const CUSTOMER_PORTAL_ROLE_NAME = "CUSTOMER";
 
 export const branchCodeRegex = /^[A-Z0-9-]{2,16}$/;
 
 export const createUserSchema = z
   .object({
     username: z.string().min(1, "Username is required").max(80, "Username too long"),
-    password: z
-      .string()
-      .min(8, "Password must be at least 8 characters")
-      .max(100, "Password too long"),
+    password: bankPasswordStringSchema,
     email: z
       .string()
       .max(150, "Email too long")
@@ -36,12 +38,37 @@ export const createUserSchema = z
       .or(z.literal("")),
   })
   .superRefine((data, ctx) => {
-    if (data.userType === "STAFF" && (!data.email || data.email.trim().length === 0)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ["email"],
-        message: "Email is required for staff users",
-      });
+    if (data.userType === "STAFF") {
+      if (!data.email || data.email.trim().length === 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["email"],
+          message: "Email is required for staff users",
+        });
+      }
+      if (data.customerPartyId && data.customerPartyId.trim() !== "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["customerPartyId"],
+          message: "Staff users cannot be linked to a customer party",
+        });
+      }
+    }
+    if (data.userType === "CUSTOMER") {
+      if (data.employeeId && data.employeeId.trim() !== "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["employeeId"],
+          message: "Not applicable for customer users",
+        });
+      }
+      if (data.glApprovalRole && data.glApprovalRole.trim() !== "") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["glApprovalRole"],
+          message: "Not applicable for customer users",
+        });
+      }
     }
   });
 
@@ -88,10 +115,7 @@ export const deprovisionUserSchema = z.object({
 export type DeprovisionUserInput = z.infer<typeof deprovisionUserSchema>;
 
 export const resetPasswordSchema = z.object({
-  password: z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .max(100, "Password too long"),
+  password: bankPasswordStringSchema,
 });
 
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

@@ -53,13 +53,19 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         disabled={disabled || loading}
         {...props}
       >
-        {loading ? (
-          <span
-            aria-hidden
-            className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-r-transparent"
-          />
-        ) : null}
-        {children}
+        {asChild ? (
+          children
+        ) : (
+          <>
+            {loading ? (
+              <span
+                aria-hidden
+                className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-r-transparent"
+              />
+            ) : null}
+            {children}
+          </>
+        )}
       </Comp>
     );
   },

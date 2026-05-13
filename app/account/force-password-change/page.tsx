@@ -14,6 +14,7 @@ import { meApi } from "@/lib/api/modules/me";
 import { changeOwnPasswordSchema, type ChangeOwnPasswordInput } from "@/lib/schemas/me";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
+import { PASSWORD_MAX_LENGTH } from "@/lib/schemas/password-policy";
 
 export default function ForcePasswordChangePage() {
   const router = useRouter();
@@ -85,6 +86,7 @@ export default function ForcePasswordChangePage() {
                 id="newPassword"
                 type="password"
                 autoComplete="new-password"
+                maxLength={PASSWORD_MAX_LENGTH}
                 {...form.register("newPassword")}
               />
               {form.formState.errors.newPassword ? (
@@ -99,6 +101,7 @@ export default function ForcePasswordChangePage() {
                 id="confirmPassword"
                 type="password"
                 autoComplete="new-password"
+                maxLength={PASSWORD_MAX_LENGTH}
                 {...form.register("confirmPassword")}
               />
               {form.formState.errors.confirmPassword ? (

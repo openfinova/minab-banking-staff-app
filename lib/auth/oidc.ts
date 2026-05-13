@@ -18,6 +18,21 @@ export interface TokenResponse {
   scope?: string;
 }
 
+const PROMPT_LOGIN_NEXT_KEY = "minab.auth.oidc.prompt-login-next";
+
+/** Call after token endpoint denied issuing tokens (e.g. 403) so the next authorize uses `prompt=login`. */
+export function flagNextAuthorizeForceLogin(): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(PROMPT_LOGIN_NEXT_KEY, "1");
+}
+
+function consumeAuthorizeForceLogin(): boolean {
+  if (typeof window === "undefined") return false;
+  const v = sessionStorage.getItem(PROMPT_LOGIN_NEXT_KEY);
+  if (v) sessionStorage.removeItem(PROMPT_LOGIN_NEXT_KEY);
+  return v === "1";
+}
+
 export function buildAuthorizeUrl(pkce: PkceState, codeChallenge: string): string {
   const url = new URL("/oauth2/authorize", appConfig.oidc.authority);
   url.searchParams.set("response_type", "code");
@@ -28,6 +43,9 @@ export function buildAuthorizeUrl(pkce: PkceState, codeChallenge: string): strin
   url.searchParams.set("nonce", pkce.nonce);
   url.searchParams.set("code_challenge", codeChallenge);
   url.searchParams.set("code_challenge_method", "S256");
+  if (consumeAuthorizeForceLogin()) {
+    url.searchParams.set("prompt", "login");
+  }
   return url.toString();
 }
 
@@ -59,20 +77,21 @@ export async function exchangeCodeForTokens(code: string, returnedState: string)
     code_verifier: pkce.codeVerifier,
   });
 
-  const response = await fetch(`${appConfig.oidc.authority}/oauth2/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-  });
+  try {
+    const response = await fetch(`${appConfig.oidc.authority}/oauth2/token`, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+    });
 
-  clearPkceState();
-
-  if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Token exchange failed: ${response.status} ${text}`);
+    if (!response.ok) {
+      throw new Error(`Token exchange failed: ${response.status} ${text}`);
+    }
+    return JSON.parse(text) as TokenResponse;
+  } finally {
+    clearPkceState();
   }
-
-  return (await response.json()) as TokenResponse;
 }
 
 export async function refreshAccessToken(refreshToken: string): Promise<TokenResponse> {
@@ -119,6 +138,16 @@ export function tokenResponseToSession(token: TokenResponse, previous?: AuthSess
 export function startRpInitiatedLogout(idToken?: string): void {
   if (typeof document === "undefined") return;
   const base = appConfig.oidc.authority.replace(/\/$/, "");
+  const hint = idToken?.trim();
+  /**
+   * Spring Authorization Server requires a non-empty id_token_hint for /connect/logout
+   * (see OidcLogoutAuthenticationConverter). After a failed code→token exchange there is no
+   * id_token; a full navigation to the IdP's form-login /logout clears the browser session.
+   */
+  if (!hint) {
+    window.location.assign(`${base}/logout`);
+    return;
+  }
   const form = document.createElement("form");
   form.method = "POST";
   form.action = `${base}/connect/logout`;
@@ -130,7 +159,7 @@ export function startRpInitiatedLogout(idToken?: string): void {
     form.appendChild(input);
   };
   field("client_id", appConfig.oidc.clientId);
-  if (idToken) field("id_token_hint", idToken.trim());
+  field("id_token_hint", hint);
   field("post_logout_redirect_uri", appConfig.oidc.postLogoutRedirectUri);
   document.body.appendChild(form);
   form.submit();

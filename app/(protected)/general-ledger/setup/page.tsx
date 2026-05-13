@@ -1,0 +1,130 @@
+"use client";
+
+import * as React from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/components/ui/page-header";
+import { RouteGuard } from "@/components/rbac/route-guard";
+import { useToast } from "@/components/ui/use-toast";
+import { describeApiError } from "@/lib/api/errors";
+import { glSetupApi } from "@/lib/api/modules/operations";
+import { useAuthStore } from "@/lib/auth/auth-store";
+import { Permissions } from "@/lib/rbac/permissions";
+import Link from "next/link";
+
+export default function GlSetupPage() {
+  return (
+    <RouteGuard permissions={[Permissions.GlApprove]}>
+      <GlSetupContent />
+    </RouteGuard>
+  );
+}
+
+function GlSetupContent() {
+  const { toast } = useToast();
+  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
+  const [currency, setCurrency] = React.useState("USD");
+  const [fiscalYear, setFiscalYear] = React.useState(new Date().getFullYear());
+  const [createdBy, setCreatedBy] = React.useState(username);
+
+  React.useEffect(() => setCreatedBy(username), [username]);
+
+  const full = useMutation({
+    mutationFn: () =>
+      glSetupApi.initializeAll({
+        currency: currency.trim().toUpperCase(),
+        fiscalYear,
+        createdBy: createdBy.trim(),
+      }),
+    onSuccess: (res) =>
+      toast({
+        title: "GL bootstrap complete",
+        description: JSON.stringify(res),
+      }),
+    onError: (error) =>
+      toast({ variant: "destructive", title: "Initialization failed", description: describeApiError(error) }),
+  });
+
+  const chartOnly = useMutation({
+    mutationFn: () =>
+      glSetupApi.initializeChartOfAccounts(currency.trim().toUpperCase(), createdBy.trim()),
+    onSuccess: (r) => toast({ title: "Chart step", description: `${r.glAccountsCreated} accounts created.` }),
+    onError: (e) => toast({ variant: "destructive", description: describeApiError(e) }),
+  });
+
+  const opOnly = useMutation({
+    mutationFn: () => glSetupApi.initializeOperationalAccounts(createdBy.trim()),
+    onSuccess: (r) =>
+      toast({ title: "Operational step", description: `${r.operationalAccountsWired} mappings wired.` }),
+    onError: (e) => toast({ variant: "destructive", description: describeApiError(e) }),
+  });
+
+  const periodsOnly = useMutation({
+    mutationFn: () => glSetupApi.initializeFiscalPeriods(fiscalYear, createdBy.trim()),
+    onSuccess: (r) =>
+      toast({
+        title: "Fiscal periods",
+        description: `Created ${r.fiscalPeriodsCreated}, skipped ${r.fiscalPeriodsAlreadyExisted}.`,
+      }),
+    onError: (e) => toast({ variant: "destructive", description: describeApiError(e) }),
+  });
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="GL system setup"
+        description="Administrative bootstrap for StandardBankTemplateDefinition (chart), operational mappings, and fiscal-period calendar."
+      />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Parameters</CardTitle>
+          <CardDescription>Shared across POST /api/v1/gl/setup/* endpoints.</CardDescription>
+        </CardHeader>
+        <CardContent className="grid max-w-lg gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase text-muted-foreground">Currency</Label>
+            <Input value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase text-muted-foreground">Fiscal year</Label>
+            <Input type="number" value={fiscalYear} onChange={(e) => setFiscalYear(Number(e.target.value))} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs uppercase text-muted-foreground">Created by</Label>
+            <Input value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Run setup</CardTitle>
+          <CardDescription>
+            <code className="text-xs">POST /initialize</code> executes chart → operational mappings → twelve monthly fiscal periods idempotently.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          <Button type="button" loading={full.isPending} onClick={() => full.mutate()}>
+            Run full initialization
+          </Button>
+          <Button variant="outline" type="button" loading={chartOnly.isPending} onClick={() => chartOnly.mutate()}>
+            Chart only
+          </Button>
+          <Button variant="outline" type="button" loading={opOnly.isPending} onClick={() => opOnly.mutate()}>
+            Operational only
+          </Button>
+          <Button variant="outline" type="button" loading={periodsOnly.isPending} onClick={() => periodsOnly.mutate()}>
+            Fiscal periods only
+          </Button>
+          <Button variant="ghost" asChild>
+            <Link href="/general-ledger/fiscal-periods">Open fiscal-period console</Link>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -2,12 +2,28 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { exchangeCodeForTokens, tokenResponseToSession } from "@/lib/auth/oidc";
+import {
+  exchangeCodeForTokens,
+  flagNextAuthorizeForceLogin,
+  startRpInitiatedLogout,
+  tokenResponseToSession,
+} from "@/lib/auth/oidc";
 import { saveSession, takeReturnTo } from "@/lib/auth/storage";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
+function formatTokenExchangeError(message: string): string {
+  if (/token exchange failed:\s*403\b/i.test(message)) {
+    return "This account is not allowed to sign in to the management portal (the identity server denied issuing tokens). If access is pending approval, wait for provisioning or ask an administrator. Use “Sign out of identity server” if you are stuck in a loop, or “Back to login” and try again—you may be prompted to sign in again.";
+  }
+  return message;
+}
+
+function shouldForceNextLoginPrompt(message: string): boolean {
+  return /token exchange failed:\s*(401|403)\b/i.test(message);
+}
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -48,7 +64,11 @@ export default function AuthCallbackPage() {
           : "/dashboard");
         router.replace(target);
       } catch (err) {
-        const message = err instanceof Error ? err.message : "Sign-in failed";
+        const raw = err instanceof Error ? err.message : "Sign-in failed";
+        if (shouldForceNextLoginPrompt(raw)) {
+          flagNextAuthorizeForceLogin();
+        }
+        const message = formatTokenExchangeError(raw);
         setLocalError(message);
         setError(message);
       }
@@ -74,10 +94,20 @@ export default function AuthCallbackPage() {
               </div>
               <Button
                 className="w-full"
-                onClick={() => router.replace("/login")}
+                onClick={() => {
+                  setError(null);
+                  router.replace("/login");
+                }}
                 variant="outline"
               >
                 Back to login
+              </Button>
+              <Button
+                className="w-full"
+                onClick={() => startRpInitiatedLogout()}
+                variant="secondary"
+              >
+                Sign out of identity server
               </Button>
             </>
           ) : (

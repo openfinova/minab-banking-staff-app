@@ -13,6 +13,7 @@ import { meApi } from "@/lib/api/modules/me";
 import { changeOwnPasswordSchema, type ChangeOwnPasswordInput } from "@/lib/schemas/me";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
+import { PASSWORD_MAX_LENGTH } from "@/lib/schemas/password-policy";
 
 export default function ChangePasswordPage() {
   return (
@@ -50,7 +51,7 @@ function ChangePasswordContent() {
     <div className="space-y-6">
       <PageHeader
         title="Change password"
-        description="Update your sign-in credentials. New password must be 8-100 characters."
+        description="Update your sign-in credentials. New password must be 12-128 characters; uppercase, lowercase, digit, and special character are required."
       />
       <Card className="max-w-lg">
         <CardHeader>
@@ -79,6 +80,7 @@ function ChangePasswordContent() {
                 id="newPassword"
                 type="password"
                 autoComplete="new-password"
+                maxLength={PASSWORD_MAX_LENGTH}
                 {...form.register("newPassword")}
               />
               {form.formState.errors.newPassword ? (
@@ -93,6 +95,7 @@ function ChangePasswordContent() {
                 id="confirmPassword"
                 type="password"
                 autoComplete="new-password"
+                maxLength={PASSWORD_MAX_LENGTH}
                 {...form.register("confirmPassword")}
               />
               {form.formState.errors.confirmPassword ? (

@@ -34,6 +34,7 @@ import { StatusBadge } from "@/components/data/status-badge";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
+import { useAuthStore } from "@/lib/auth/auth-store";
 import { fiscalPeriodsApi, type FiscalPeriod } from "@/lib/api/modules/operations";
 import {
   createFiscalPeriodSchema,
@@ -53,6 +54,7 @@ export default function FiscalPeriodsPage() {
 
 function FiscalPeriodsContent() {
   const queryClient = useQueryClient();
+  const session = useAuthStore((s) => s.session);
   const { toast } = useToast();
   const list = useQuery({ queryKey: ["fiscal-periods"], queryFn: fiscalPeriodsApi.list });
   const [pending, setPending] = React.useState<{
@@ -60,13 +62,58 @@ function FiscalPeriodsContent() {
     kind: "close" | "reopen";
   } | null>(null);
 
-  const onAction = async () => {
+  const actorId =
+    session?.user.username?.trim() ||
+    session?.user.email?.trim() ||
+    session?.user.subject?.trim() ||
+    "";
+
+  const onAction = async (reason: string) => {
     if (!pending) return;
+    const { period, kind } = pending;
+    const trimmedReason = reason.trim();
+
+    if (!actorId) {
+      toast({
+        variant: "destructive",
+        title: "Missing user identity",
+        description: "Sign in again, or ensure your username is available for audit (closedBy / reopenedBy).",
+      });
+      return;
+    }
+    if (!trimmedReason) {
+      toast({
+        variant: "destructive",
+        title: "Reason required",
+        description: "Enter a brief reason before confirming.",
+      });
+      return;
+    }
+    if (kind === "reopen" && trimmedReason.length < 10) {
+      toast({
+        variant: "destructive",
+        title: "Reopen justification too short",
+        description: "The server requires at least 10 characters for reopen reasons.",
+      });
+      return;
+    }
+
     try {
-      if (pending.kind === "close") await fiscalPeriodsApi.close(pending.period.id);
-      else await fiscalPeriodsApi.reopen(pending.period.id);
-      queryClient.invalidateQueries({ queryKey: ["fiscal-periods"] });
-      toast({ title: pending.kind === "close" ? "Period closed" : "Period reopened" });
+      if (kind === "close") {
+        await fiscalPeriodsApi.close(period.id, { closedBy: actorId, reason: trimmedReason });
+        toast({
+          title: "Period closed",
+          description: `${period.name}: status will show CLOSED and posting is BLOCKED.`,
+        });
+      } else {
+        await fiscalPeriodsApi.reopen(period.id, { reopenedBy: actorId, reason: trimmedReason });
+        toast({
+          title: "Period reopened",
+          description: `${period.name} is OPEN again for postings within its dates.`,
+        });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["fiscal-periods"] });
+      setPending(null);
     } catch (error) {
       toast({
         variant: "destructive",
@@ -74,7 +121,6 @@ function FiscalPeriodsContent() {
         description: describeApiError(error),
       });
     }
-    setPending(null);
   };
 
   return (
@@ -138,7 +184,7 @@ function FiscalPeriodsContent() {
                             >
                               Close
                             </Button>
-                          ) : (
+                          ) : p.status === "CLOSED" || p.status === "REOPENED" ? (
                             <Button
                               size="sm"
                               variant="outline"
@@ -146,6 +192,8 @@ function FiscalPeriodsContent() {
                             >
                               Reopen
                             </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
                           )}
                         </div>
                       </Can>
@@ -167,13 +215,26 @@ function FiscalPeriodsContent() {
         onOpenChange={(open) => !open && setPending(null)}
         title={pending?.kind === "close" ? "Close fiscal period" : "Reopen fiscal period"}
         description={
-          pending?.kind === "close"
-            ? "Closing the period blocks further postings until reopened."
-            : "Reopening allows back-dated postings within the period."
+          pending?.kind === "close" ? (
+            <>
+              Close <strong className="font-medium text-foreground">{pending.period.name}</strong> (
+              {pending.period.fiscalYear} / period {pending.period.periodNumber}
+              )? Posting into this window will be blocked until it is reopened.
+            </>
+          ) : (
+            <>
+              Reopen <strong className="font-medium text-foreground">{pending?.period.name}</strong>? New postings within
+              this period will be allowed. Provide a substantive justification (
+              <span className="font-mono">≥ 10 characters</span>).
+            </>
+          )
         }
         confirmLabel={pending?.kind === "close" ? "Close period" : "Reopen period"}
         destructive={pending?.kind === "close"}
         reasonRequired
+        reasonPlaceholder={
+          pending?.kind === "close" ? "e.g. January 2026 month-end review complete." : "Regulatory justification (min. 10 characters)."
+        }
         onConfirm={onAction}
       />
     </div>

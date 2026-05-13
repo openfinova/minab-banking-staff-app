@@ -62,14 +62,23 @@ const normalizeRecoveryCodes = (value: unknown): string[] => {
   return codes;
 };
 
+/** Mirrors `GET /api/v1/identity/me/audit-events` optional filters. */
+export interface OwnAuditQuery {
+  eventType?: string;
+  ipAddress?: string;
+  from?: string;
+  to?: string;
+}
+
 export interface OwnAuditEvent {
   id: string;
   timestamp: string;
   eventType: string;
-  result?: string;
   ipAddress?: string;
   userAgent?: string;
-  details?: Record<string, unknown>;
+  details?: string;
+  detailsJson?: Record<string, unknown>;
+  changedByUsername?: string;
 }
 
 export const meApi = {
@@ -93,8 +102,16 @@ export const meApi = {
     api.post<void>("/api/v1/identity/me/mfa/verify", body),
   mfaDisable: (body: { currentPassword: string }) =>
     request<void>("/api/v1/identity/me/mfa", { method: "DELETE", body }),
-  auditEvents: (page?: PageRequest) =>
+  auditEvents: (page?: PageRequest, filters?: OwnAuditQuery) =>
     api.get<PageResponse<OwnAuditEvent>>("/api/v1/identity/me/audit-events", {
-      query: { page: page?.page, size: page?.size, sort: page?.sort },
+      query: {
+        eventType: filters?.eventType,
+        ipAddress: filters?.ipAddress,
+        from: filters?.from,
+        to: filters?.to,
+        page: page?.page,
+        size: page?.size,
+        sort: page?.sort,
+      },
     }),
 };
