@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, UserPlus, Users } from "lucide-react";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { Can } from "@/components/rbac/can";
 import { PageHeader } from "@/components/ui/page-header";
@@ -27,29 +27,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DateInput } from "@/components/ui/date-input";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { CustomerIdentityPicker } from "@/components/accounts/customer-identity-picker";
+import { CustomerPartyLink } from "@/components/customers/customer-party-link";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import {
   accountsApi,
   type AccountPermission,
+  type AccountRelationshipResponse,
   type RelationshipType,
 } from "@/lib/api/modules/accounts";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
-
-const REL_TYPES: RelationshipType[] = [
-  "PRIMARY_HOLDER",
-  "SECONDARY_HOLDER",
-  "AUTHORIZED_USER",
-  "BENEFICIARY",
-  "GUARDIAN",
-];
-
-const ALL_PERMISSIONS: AccountPermission[] = ["VIEW", "TRANSACT", "MANAGE", "ADMIN"];
+import {
+  ALL_PERMISSIONS,
+  RELATIONSHIP_ROLE_LABEL,
+  sortRelationshipRows,
+} from "@/lib/accounts/relationship-ui";
 
 export default function AccountRelationshipsPage() {
   return (
@@ -64,21 +59,6 @@ function AccountRelationshipsContent() {
   const id = typeof params?.id === "string" ? params.id : "";
   const qc = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
-
-  const [userProfileId, setUserProfileId] = React.useState("");
-  const [relType, setRelType] = React.useState<RelationshipType>("AUTHORIZED_USER");
-  const [createdBy, setCreatedBy] = React.useState(username);
-  React.useEffect(() => {
-    setCreatedBy(username);
-  }, [username]);
-
-  const [benUserId, setBenUserId] = React.useState("");
-  const [benPct, setBenPct] = React.useState("");
-  const [benDesc, setBenDesc] = React.useState("");
-  const [benBirth, setBenBirth] = React.useState("");
-  const [benFrom, setBenFrom] = React.useState("");
-  const [benUntil, setBenUntil] = React.useState("");
 
   const [checkUser, setCheckUser] = React.useState("");
   const [checkPerm, setCheckPerm] = React.useState<AccountPermission>("VIEW");
@@ -89,27 +69,13 @@ function AccountRelationshipsContent() {
     enabled: Boolean(id),
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["accounts", id, "relationships"] });
-
-  const add = useMutation({
-    mutationFn: () =>
-      accountsApi.addRelationship(id, {
-        userProfileId: userProfileId.trim(),
-        relationshipType: relType,
-        createdBy: createdBy.trim() || username,
-      }),
-    onSuccess: () => {
-      invalidate();
-      toast({ title: "Relationship added" });
-      setUserProfileId("");
-    },
-    onError: (e) =>
-      toast({
-        variant: "destructive",
-        title: "Add failed",
-        description: describeApiError(e),
-      }),
+  const accountDetail = useQuery({
+    queryKey: ["accounts", "detail", id],
+    queryFn: () => accountsApi.get(id),
+    enabled: Boolean(id),
   });
+
+  const invalidate = () => void qc.invalidateQueries({ queryKey: ["accounts", id, "relationships"] });
 
   const remove = useMutation({
     mutationFn: (userId: string) => accountsApi.removeRelationship(id, userId),
@@ -121,35 +87,6 @@ function AccountRelationshipsContent() {
       toast({
         variant: "destructive",
         title: "Remove failed",
-        description: describeApiError(e),
-      }),
-  });
-
-  const addBen = useMutation({
-    mutationFn: () =>
-      accountsApi.addBeneficiary(id, {
-        userProfileId: benUserId.trim(),
-        percentage: Number(benPct),
-        relationshipDescription: benDesc.trim() || undefined,
-        birthDate: benBirth || undefined,
-        effectiveFrom: benFrom ? `${benFrom}T00:00:00` : undefined,
-        effectiveUntil: benUntil ? `${benUntil}T00:00:00` : undefined,
-        createdBy: createdBy.trim() || username,
-      }),
-    onSuccess: () => {
-      invalidate();
-      toast({ title: "Beneficiary added" });
-      setBenUserId("");
-      setBenPct("");
-      setBenDesc("");
-      setBenBirth("");
-      setBenFrom("");
-      setBenUntil("");
-    },
-    onError: (e) =>
-      toast({
-        variant: "destructive",
-        title: "Beneficiary failed",
         description: describeApiError(e),
       }),
   });
@@ -207,7 +144,8 @@ function AccountRelationshipsContent() {
     );
   }
 
-  const rows = list.data ?? [];
+  const rows = sortRelationshipRows(list.data ?? []);
+  const accountPrimaryProfileId = accountDetail.data?.primaryUserProfileId;
 
   return (
     <div className="space-y-6">
@@ -221,116 +159,46 @@ function AccountRelationshipsContent() {
       <PageHeader
         title="Relationships"
         description={`Parties linked to this account — GET /api/v1/accounts/${id}/relationships`}
+        actions={
+          <Can permissions={[Permissions.AccountWrite]}>
+            <Button size="sm" asChild>
+              <Link href={`/accounts/${id}/relationships/add`}>
+                <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                Add relationship
+              </Link>
+            </Button>
+            <Button size="sm" variant="secondary" asChild>
+              <Link href={`/accounts/${id}/relationships/beneficiary/add`}>
+                <Users className="mr-1.5 h-3.5 w-3.5" />
+                Add beneficiary
+              </Link>
+            </Button>
+          </Can>
+        }
       />
 
-      <Can permissions={[Permissions.AccountWrite]}>
-        <Card className="max-w-2xl">
-          <CardHeader>
-            <CardTitle>Add relationship</CardTitle>
-            <CardDescription>POST /api/v1/accounts/{"{"}id{"}"}/relationships</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <CustomerIdentityPicker
-              idPrefix="acct-rel"
-              role="relatedParty"
-              profileUserId={userProfileId}
-              onProfileUserIdChange={setUserProfileId}
-              actionLabel="Use this customer"
+      <Card>
+        <CardHeader>
+          <CardTitle>Linked customers</CardTitle>
+          <CardDescription>
+            Customer (resolved from identity profile id), relationship type, and access. Use the buttons above to add
+            rows.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No relationship rows for this account.</p>
+          ) : (
+            <LinkedCustomersTable
+              rows={rows}
+              accountPrimaryProfileId={accountPrimaryProfileId}
+              remove={remove}
+              removeBen={removeBen}
+              permsSave={permsSave}
             />
-            <div className="grid gap-1.5">
-              <Label>Type</Label>
-              <Select value={relType} onValueChange={(v) => setRelType(v as RelationshipType)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {REL_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      {t}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="rel-cb">Created by</Label>
-              <Input id="rel-cb" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
-            </div>
-            <Button
-              type="button"
-              disabled={add.isPending || !userProfileId.trim()}
-              onClick={() => add.mutate()}
-            >
-              {add.isPending ? "Adding…" : "Add"}
-            </Button>
-          </CardContent>
-        </Card>
-      </Can>
-
-      <Can permissions={[Permissions.AccountWrite]}>
-        <Card className="max-w-2xl">
-          <CardHeader>
-            <CardTitle>Add beneficiary</CardTitle>
-            <CardDescription>
-              POST /api/v1/accounts/{"{"}id{"}"}/beneficiaries — allocation must sum to ≤ 100%.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <CustomerIdentityPicker
-              idPrefix="acct-ben"
-              role="relatedParty"
-              profileUserId={benUserId}
-              onProfileUserIdChange={setBenUserId}
-              actionLabel="Use this customer"
-            />
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <Label htmlFor="ben-pct">Percentage</Label>
-                <Input
-                  id="ben-pct"
-                  inputMode="decimal"
-                  value={benPct}
-                  onChange={(e) => setBenPct(e.target.value)}
-                  placeholder="0.01 – 100.00"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="ben-desc">Relationship description</Label>
-                <Input
-                  id="ben-desc"
-                  value={benDesc}
-                  onChange={(e) => setBenDesc(e.target.value)}
-                  placeholder="Spouse, child, …"
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="ben-bd">Birth date</Label>
-                <DateInput id="ben-bd" value={benBirth} onChange={setBenBirth} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="ben-from">Effective from</Label>
-                <DateInput id="ben-from" value={benFrom} onChange={setBenFrom} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="ben-until">Effective until</Label>
-                <DateInput id="ben-until" value={benUntil} onChange={setBenUntil} />
-              </div>
-            </div>
-            <Button
-              type="button"
-              disabled={
-                addBen.isPending ||
-                !benUserId.trim() ||
-                benPct.trim() === "" ||
-                Number.isNaN(Number(benPct))
-              }
-              onClick={() => addBen.mutate()}
-            >
-              {addBen.isPending ? "Adding…" : "Add beneficiary"}
-            </Button>
-          </CardContent>
-        </Card>
-      </Can>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -382,50 +250,59 @@ function AccountRelationshipsContent() {
           ) : null}
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Linked users</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {rows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No relationships recorded.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User profile</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Beneficiary</TableHead>
-                  <TableHead>Permissions</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rows.map((r) => (
-                  <RelationshipRow
-                    key={r.id}
-                    r={r}
-                    onRemove={() => remove.mutate(r.userProfileId)}
-                    onRemoveBen={() => removeBen.mutate(r.userProfileId)}
-                    onSavePerms={(perms) =>
-                      permsSave.mutate({ relationshipId: r.id, permissions: perms })
-                    }
-                    saving={permsSave.isPending}
-                    removing={remove.isPending}
-                    removingBen={removeBen.isPending}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }
 
-interface RelationshipRowProps {
+function LinkedCustomersTable({
+  rows,
+  accountPrimaryProfileId,
+  remove,
+  removeBen,
+  permsSave,
+}: {
+  rows: AccountRelationshipResponse[];
+  accountPrimaryProfileId?: string;
+  remove: { mutate: (userId: string) => void; isPending: boolean };
+  removeBen: { mutate: (userId: string) => void; isPending: boolean };
+  permsSave: {
+    mutate: (p: { relationshipId: string; permissions: AccountPermission[] }) => void;
+    isPending: boolean;
+  };
+}) {
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Customer</TableHead>
+          <TableHead>Relationship type</TableHead>
+          <TableHead>Beneficiary</TableHead>
+          <TableHead>Permissions</TableHead>
+          <TableHead className="text-right">Actions</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {rows.map((r) => (
+          <LinkedCustomerRow
+            key={r.id}
+            r={r}
+            matchesAccountPrimary={Boolean(
+              accountPrimaryProfileId && r.userProfileId === accountPrimaryProfileId,
+            )}
+            onRemove={() => remove.mutate(r.userProfileId)}
+            onRemoveBen={() => removeBen.mutate(r.userProfileId)}
+            onSavePerms={(perms) => permsSave.mutate({ relationshipId: r.id, permissions: perms })}
+            saving={permsSave.isPending}
+            removing={remove.isPending}
+            removingBen={removeBen.isPending}
+          />
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
+
+interface LinkedCustomerRowProps {
   r: {
     id: string;
     userProfileId: string;
@@ -435,6 +312,7 @@ interface RelationshipRowProps {
     isBeneficiary?: boolean;
     beneficiaryPercentage?: string | number;
   };
+  matchesAccountPrimary?: boolean;
   onRemove: () => void;
   onRemoveBen: () => void;
   onSavePerms: (perms: AccountPermission[]) => void;
@@ -443,15 +321,16 @@ interface RelationshipRowProps {
   removingBen: boolean;
 }
 
-function RelationshipRow({
+function LinkedCustomerRow({
   r,
+  matchesAccountPrimary = false,
   onRemove,
   onRemoveBen,
   onSavePerms,
   saving,
   removing,
   removingBen,
-}: RelationshipRowProps) {
+}: LinkedCustomerRowProps) {
   const isBen = r.isBeneficiary ?? r.beneficiary ?? false;
   const [draft, setDraft] = React.useState<Set<AccountPermission>>(
     () => new Set(r.permissions ?? []),
@@ -473,8 +352,23 @@ function RelationshipRow({
 
   return (
     <TableRow>
-      <TableCell className="font-mono text-xs">{r.userProfileId}</TableCell>
-      <TableCell>{r.relationshipType}</TableCell>
+      <TableCell>
+        <div className="flex max-w-[18rem] flex-col gap-1">
+          <CustomerPartyLink profileUserId={r.userProfileId} />
+          <span className="break-all font-mono text-[10px] text-muted-foreground">{r.userProfileId}</span>
+          {matchesAccountPrimary ? (
+            <Badge variant="secondary" className="w-fit whitespace-normal text-left text-[10px] font-normal leading-snug">
+              Same profile as Summary primary
+            </Badge>
+          ) : null}
+        </div>
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-col gap-0.5">
+          <span className="font-medium">{RELATIONSHIP_ROLE_LABEL[r.relationshipType]}</span>
+          <span className="font-mono text-[10px] text-muted-foreground">{r.relationshipType}</span>
+        </div>
+      </TableCell>
       <TableCell>
         {isBen ? (
           <span>

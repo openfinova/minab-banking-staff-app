@@ -79,20 +79,34 @@ export interface FeeWaiver {
   id: string;
   customerId?: string;
   accountId?: string;
-  feeType?: string;
+  waiverName?: string;
   reason?: string;
-  startsAt?: string;
-  endsAt?: string;
-  active?: boolean;
+  description?: string;
+  transactionType?: string;
+  customerTier?: string;
+  campaignCode?: string;
+  isActive?: boolean;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  maxUsageCount?: number;
+  isGlobal?: boolean;
 }
 
 export interface CreateFeeWaiverRequest {
-  customerId?: string;
-  accountId?: string;
-  feeType?: string;
-  reason: string;
-  startsAt: string;
-  endsAt?: string;
+  customerId: string;
+  waiverName?: string;
+  description?: string;
+  reason?: string;
+  transactionType?: string;
+  customerTier?: string;
+  campaignCode?: string;
+  isActive?: boolean;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  maxUsageCount?: number;
+  isGlobal?: boolean;
+  conditions?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 export const feesApi = {

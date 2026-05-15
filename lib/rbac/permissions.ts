@@ -31,6 +31,18 @@ export const Permissions = {
   CustomerPiiRead: "customer:pii:read",
   AccountRead: "account:read",
   AccountWrite: "account:write",
+  TransactionRead: "transaction:read",
+  TransactionWrite: "transaction:write",
+  LoanRead: "loan:read",
+  LoanWrite: "loan:write",
+  LoanApprove: "loan:approve",
+  LoanDisburse: "loan:disburse",
+  LoanDisburseApprove: "loan:disburse:approve",
+  LoanWriteOff: "loan:write-off",
+  LoanRestructure: "loan:restructure",
+  LoanRestructureApprove: "loan:restructure:approve",
+  LoanCollect: "loan:collect",
+  LoanCollectApprove: "loan:collect:approve",
 } as const;
 
 export type PermissionKey = keyof typeof Permissions;

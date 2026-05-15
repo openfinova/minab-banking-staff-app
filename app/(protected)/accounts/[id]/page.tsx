@@ -22,6 +22,7 @@ import {
 import { StatusBadge } from "@/components/data/status-badge";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { AccountServicingLinks } from "@/components/accounts/account-servicing-links";
+import { CustomerPartySummaryBlock } from "@/components/customers/customer-party-link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/use-toast";
@@ -181,10 +182,16 @@ function AccountDetailContent() {
                 <span className="font-mono text-xs">{a.iban}</span>
               </p>
             ) : null}
-            <p>
-              <span className="text-muted-foreground">Primary profile</span>{" "}
-              <span className="font-mono text-xs">{a.primaryUserProfileId}</span>
-            </p>
+            <div className="space-y-2">
+              <p className="text-muted-foreground">Primary holder</p>
+              <CustomerPartySummaryBlock profileUserId={a.primaryUserProfileId} />
+              <p className="text-xs text-muted-foreground">
+                Joint holders and other parties:{" "}
+                <Link className="text-primary underline" href={`/accounts/${id}/relationships`}>
+                  Relationships
+                </Link>
+              </p>
+            </div>
             <p className="flex flex-wrap items-center gap-2">
               <span className="text-muted-foreground">Status</span>
               <StatusBadge status={a.status} />

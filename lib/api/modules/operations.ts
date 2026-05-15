@@ -1,73 +1,13 @@
 import { api } from "@/lib/api/client";
 import { withPaging, type PageRequest, type PageResponse } from "@/lib/api/query";
 
-export type CompensationStatus =
-  | "ACTIVE"
-  | "PAUSED"
-  | "COMPLETED"
-  | "FAILED"
-  | "CANCELLED"
-  | string;
-
-export interface CompensationStep {
-  stepId: string;
-  name: string;
-  status: string;
-  startedAt?: string;
-  completedAt?: string;
-  attempt?: number;
-  errorMessage?: string;
-}
-
-export interface CompensationWorkflow {
-  workflowId: string;
-  transactionType: string;
-  status: CompensationStatus;
-  startedAt?: string;
-  completedAt?: string;
-  initiatorId?: string;
-  failureReason?: string;
-  steps?: CompensationStep[];
-}
-
-export interface CompensationReport {
-  totalActive: number;
-  totalCompleted: number;
-  totalFailed: number;
-  averageDurationMs?: number;
-}
-
-export const compensationApi = {
-  active: () =>
-    api.get<CompensationWorkflow[]>("/api/v1/compensation/workflows/active"),
-  failed: () =>
-    api.get<CompensationWorkflow[]>("/api/v1/compensation/workflows/failed"),
-  byStatus: (status: string) =>
-    api.get<CompensationWorkflow[]>(`/api/v1/compensation/workflows/status/${status}`),
-  get: (workflowId: string) =>
-    api.get<CompensationWorkflow>(`/api/v1/compensation/workflows/${workflowId}`),
-  status: (workflowId: string) =>
-    api.get<{ status: CompensationStatus }>(
-      `/api/v1/compensation/workflows/${workflowId}/status`,
-    ),
-  steps: (workflowId: string) =>
-    api.get<CompensationStep[]>(`/api/v1/compensation/workflows/${workflowId}/steps`),
-  pause: (workflowId: string) =>
-    api.post<void>(`/api/v1/compensation/workflows/${workflowId}/pause`),
-  resume: (workflowId: string) =>
-    api.post<void>(`/api/v1/compensation/workflows/${workflowId}/resume`),
-  forceComplete: (workflowId: string) =>
-    api.post<void>(`/api/v1/compensation/workflows/${workflowId}/force-complete`),
-  retryStep: (workflowId: string, stepId: string) =>
-    api.post<void>(
-      `/api/v1/compensation/workflows/${workflowId}/steps/${stepId}/retry`,
-    ),
-  skipStep: (workflowId: string, stepId: string) =>
-    api.post<void>(
-      `/api/v1/compensation/workflows/${workflowId}/steps/${stepId}/skip`,
-    ),
-  report: () => api.get<CompensationReport>("/api/v1/compensation/workflows/report"),
-};
+export type {
+  CompensationStatus,
+  CompensationWorkflow,
+  CompensationWorkflowReport,
+  CompensationStepRow,
+} from "./transaction-processing";
+export { compensationApi } from "./transaction-processing";
 
 export interface GlApprovalQueueItem {
   transactionId: string;
