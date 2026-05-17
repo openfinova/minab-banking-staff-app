@@ -28,7 +28,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import { accountsApi, type AccountStatus } from "@/lib/api/modules/accounts";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
 
 const STATUSES: AccountStatus[] = ["ACTIVE", "SUSPENDED", "FROZEN", "DORMANT", "CLOSED"];
@@ -53,8 +52,6 @@ function AccountDetailContent() {
   const id = typeof params?.id === "string" ? params.id : "";
   const qc = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
-
   const detail = useQuery({
     queryKey: ["accounts", "detail", id],
     queryFn: () => accountsApi.get(id),
@@ -63,13 +60,10 @@ function AccountDetailContent() {
 
   const [statusDraft, setStatusDraft] = React.useState<AccountStatus>("ACTIVE");
   const [statusReason, setStatusReason] = React.useState("");
-  const [changedBy, setChangedBy] = React.useState(username);
   const [closeOpen, setCloseOpen] = React.useState(false);
+  const [freezeOpen, setFreezeOpen] = React.useState(false);
+  const [unfreezeOpen, setUnfreezeOpen] = React.useState(false);
   const [txnAmount, setTxnAmount] = React.useState("");
-
-  React.useEffect(() => {
-    setChangedBy(username);
-  }, [username]);
 
   React.useEffect(() => {
     const a = detail.data;
@@ -82,7 +76,6 @@ function AccountDetailContent() {
       accountsApi.updateStatus(id, {
         newStatus: statusDraft,
         reason: statusReason.trim() || "Status update",
-        changedBy: changedBy.trim() || username,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["accounts", "detail", id] });
@@ -96,6 +89,30 @@ function AccountDetailContent() {
         title: "Update failed",
         description: describeApiError(e),
       }),
+  });
+
+  const applyFrozen = useMutation({
+    mutationFn: (reason: string) =>
+      accountsApi.updateStatus(id, { newStatus: "FROZEN", reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["accounts", "detail", id] });
+      qc.invalidateQueries({ queryKey: ["accounts", "search"] });
+      toast({ title: "Account frozen" });
+    },
+    onError: (e) =>
+      toast({ variant: "destructive", title: "Freeze failed", description: describeApiError(e) }),
+  });
+
+  const applyUnfrozen = useMutation({
+    mutationFn: (reason: string) =>
+      accountsApi.updateStatus(id, { newStatus: "ACTIVE", reason }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["accounts", "detail", id] });
+      qc.invalidateQueries({ queryKey: ["accounts", "search"] });
+      toast({ title: "Account restored to active" });
+    },
+    onError: (e) =>
+      toast({ variant: "destructive", title: "Unfreeze failed", description: describeApiError(e) }),
   });
 
   const closeAccount = useMutation({
@@ -160,7 +177,7 @@ function AccountDetailContent() {
 
       <PageHeader
         title={a.displayName ?? a.accountNumber}
-        description={`${a.productType} · ${a.currency} — backend id ${a.id}`}
+        description={`${a.productType} · ${a.currency} · id ${a.id}`}
       />
 
       <AccountServicingLinks accountId={id} />
@@ -169,7 +186,7 @@ function AccountDetailContent() {
         <Card>
           <CardHeader>
             <CardTitle>Summary</CardTitle>
-            <CardDescription>Core fields from GET /api/v1/accounts/{"{"}id{"}"}.</CardDescription>
+            <CardDescription>Authoritative ledger values for balances, product, status, and links.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p>
@@ -211,9 +228,31 @@ function AccountDetailContent() {
           <Card>
             <CardHeader>
               <CardTitle>Status</CardTitle>
-              <CardDescription>PATCH /api/v1/accounts/{"{"}id{"}"}/status</CardDescription>
+              <CardDescription>Change servicing state. Your operator identity is recorded by the service.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {a.status !== "FROZEN" && a.status !== "CLOSED" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setFreezeOpen(true)}
+                  >
+                    Freeze account
+                  </Button>
+                ) : null}
+                {a.status === "FROZEN" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setUnfreezeOpen(true)}
+                  >
+                    Restore to active
+                  </Button>
+                ) : null}
+              </div>
               <div className="grid gap-1.5">
                 <Label>New status</Label>
                 <Select value={statusDraft} onValueChange={(v) => setStatusDraft(v as AccountStatus)}>
@@ -237,10 +276,6 @@ function AccountDetailContent() {
                   onChange={(e) => setStatusReason(e.target.value)}
                   placeholder="Regulatory hold, customer request…"
                 />
-              </div>
-              <div className="grid gap-1.5">
-                <Label htmlFor="st-by">Changed by</Label>
-                <Input id="st-by" value={changedBy} onChange={(e) => setChangedBy(e.target.value)} />
               </div>
               <Button
                 type="button"
@@ -268,7 +303,7 @@ function AccountDetailContent() {
       <Card>
         <CardHeader>
           <CardTitle>Transaction validation</CardTitle>
-          <CardDescription>POST /api/v1/accounts/{"{"}id{"}"}/validate?amount=…</CardDescription>
+          <CardDescription>Check whether a debit is allowed before you post to this account.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="grid min-w-[8rem] gap-1.5">
@@ -305,13 +340,40 @@ function AccountDetailContent() {
         open={closeOpen}
         onOpenChange={setCloseOpen}
         title="Close this account?"
-        description="This invokes DELETE /api/v1/accounts/{id} with a required reason. Ensure back-office policy allows closure from the portal."
+        description="This closes the account in line with back-office policy. Ensure settlement and customer communication are complete."
         confirmLabel="Close account"
         destructive
         reasonRequired
         reasonLabel="Closure reason"
+        reasonMinLength={12}
         onConfirm={async (reason) => {
           await closeAccount.mutateAsync(reason.trim());
+        }}
+      />
+      <ConfirmAction
+        open={freezeOpen}
+        onOpenChange={setFreezeOpen}
+        title="Freeze this account?"
+        description="Freezing blocks debits and credits until you restore the account to active."
+        confirmLabel="Freeze"
+        reasonRequired
+        reasonLabel="Reason"
+        reasonMinLength={10}
+        onConfirm={async (reason) => {
+          await applyFrozen.mutateAsync(reason.trim());
+        }}
+      />
+      <ConfirmAction
+        open={unfreezeOpen}
+        onOpenChange={setUnfreezeOpen}
+        title="Restore account to active?"
+        description="This clears the servicing freeze. Confirm risk and compliance clearance first."
+        confirmLabel="Restore to active"
+        reasonRequired
+        reasonLabel="Reason"
+        reasonMinLength={10}
+        onConfirm={async (reason) => {
+          await applyUnfrozen.mutateAsync(reason.trim());
         }}
       />
     </div>

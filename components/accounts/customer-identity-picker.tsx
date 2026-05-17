@@ -11,7 +11,7 @@ import { Permissions } from "@/lib/rbac/permissions";
 import type { CustomerResponse } from "@/lib/api/modules/customers";
 
 export type CustomerIdentityPickerProps = {
-  /** Identity user profile UUID used by `/api/v1/accounts` (primary holder or related party). */
+  /** Identity user profile UUID for the account primary holder or related party. */
   profileUserId: string;
   onProfileUserIdChange: (uuid: string) => void;
   /** Row action label in the lookup table. */
@@ -90,7 +90,7 @@ export function CustomerIdentityPicker({
         <CustomerQuickLookup
           onPickCustomer={onPick}
           actionLabel={actionLabel}
-          helperText="Customers only — matches GET /api/v1/customers. Pick a row to set the identity user from the customer's linked digital banking login."
+          helperText="Customers only — pick a directory row to bind the customer's linked digital-banking login."
         />
       ) : (
         <p className="text-xs text-muted-foreground">

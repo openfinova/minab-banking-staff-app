@@ -32,7 +32,6 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import { accountsApi, type LimitPeriod, type LimitType } from "@/lib/api/modules/accounts";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
 
 const LIMIT_TYPES: LimitType[] = [
@@ -70,7 +69,6 @@ function AccountLimitsContent() {
   const id = typeof params?.id === "string" ? params.id : "";
   const qc = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
 
   const detail = useQuery({
     queryKey: ["accounts", "detail", id],
@@ -88,14 +86,9 @@ function AccountLimitsContent() {
   const [limitPeriod, setLimitPeriod] = React.useState<LimitPeriod>("DAILY");
   const [maxAmount, setMaxAmount] = React.useState("");
   const [maxCount, setMaxCount] = React.useState("");
-  const [createdBy, setCreatedBy] = React.useState(username);
 
   const [checkType, setCheckType] = React.useState<LimitType>("DAILY_TRANSACTION");
   const [checkAmount, setCheckAmount] = React.useState("");
-
-  React.useEffect(() => {
-    setCreatedBy(username);
-  }, [username]);
 
   const add = useMutation({
     mutationFn: () =>
@@ -104,7 +97,6 @@ function AccountLimitsContent() {
         limitPeriod,
         maxAmount: maxAmount.trim() ? Number(maxAmount) : undefined,
         maxCount: maxCount.trim() ? Number(maxCount) : undefined,
-        createdBy: createdBy.trim() || username,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["accounts", id, "limits"] });
@@ -121,8 +113,7 @@ function AccountLimitsContent() {
   });
 
   const remove = useMutation({
-    mutationFn: (p: { limitId: string; removedBy: string }) =>
-      accountsApi.removeLimit(p.limitId, p.removedBy),
+    mutationFn: (p: { limitId: string }) => accountsApi.removeLimit(p.limitId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["accounts", id, "limits"] });
       toast({ title: "Limit removed" });
@@ -171,13 +162,13 @@ function AccountLimitsContent() {
 
       <PageHeader
         title="Limits"
-        description={`Velocity and balance constraints — /api/v1/accounts/${id}/limits`}
+        description="Cash-flow and velocity guardrails — test debits before they post and tune caps for this account."
       />
 
       <Card>
         <CardHeader>
           <CardTitle>Check limit</CardTitle>
-          <CardDescription>POST /api/v1/accounts/{"{"}id{"}"}/limits/check</CardDescription>
+          <CardDescription>Simulate a debit and see whether configured limits would block it.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1.5">
@@ -225,7 +216,7 @@ function AccountLimitsContent() {
         <Card className="max-w-xl">
           <CardHeader>
             <CardTitle>Add limit</CardTitle>
-            <CardDescription>POST /api/v1/accounts/{"{"}id{"}"}/limits</CardDescription>
+            <CardDescription>Add or adjust limit rows (type, period, amount, currency).</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid gap-1.5">
@@ -276,10 +267,6 @@ function AccountLimitsContent() {
                 onChange={(e) => setMaxCount(e.target.value)}
               />
             </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="lmx-cb">Created by</Label>
-              <Input id="lmx-cb" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
-            </div>
             <Button
               type="button"
               disabled={add.isPending}
@@ -325,7 +312,7 @@ function AccountLimitsContent() {
                           className="text-destructive"
                           disabled={remove.isPending}
                           onClick={() =>
-                            remove.mutate({ limitId: r.id, removedBy: username })
+                            remove.mutate({ limitId: r.id })
                           }
                         >
                           Remove

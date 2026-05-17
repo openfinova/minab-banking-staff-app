@@ -7,6 +7,8 @@ export interface RoleSummary {
   description?: string;
   systemRole?: boolean;
   permissionCount?: number;
+  /** Permission authorities attached to this role (when returned by list endpoint). */
+  permissions?: string[];
 }
 
 export interface RoleDetail extends RoleSummary {

@@ -34,7 +34,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { StatusBadge } from "@/components/data/status-badge";
 import { describeApiError } from "@/lib/api/errors";
 import { glAccountsApi, glSetupApi } from "@/lib/api/modules/operations";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
 import { cn } from "@/lib/utils";
 
@@ -49,7 +48,6 @@ export default function ChartOfAccountsPage() {
 function ChartOfAccountsContent() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
   const [page, setPage] = React.useState(0);
   const [searchDraft, setSearchDraft] = React.useState("");
   const [search, setSearch] = React.useState<string | undefined>(undefined);
@@ -73,8 +71,8 @@ function ChartOfAccountsContent() {
     page === 0;
 
   const initChart = useMutation({
-    mutationFn: ({ currency, createdBy }: { currency: string; createdBy: string }) =>
-      glSetupApi.initializeChartOfAccounts(currency.trim().toUpperCase(), createdBy.trim()),
+    mutationFn: (currency: string) =>
+      glSetupApi.initializeChartOfAccounts(currency.trim().toUpperCase()),
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["gl-accounts"] });
       toast({
@@ -97,9 +95,8 @@ function ChartOfAccountsContent() {
           showInstallStandardChart ? (
             <Can permissions={[Permissions.GlApprove]}>
               <StandardChartDialog
-                defaultCreatedBy={username}
                 submitting={initChart.isPending}
-                onSubmit={(v) => initChart.mutate(v)}
+                onSubmit={(currency) => initChart.mutate(currency)}
                 triggerLabel="Install standard chart of accounts"
               />
             </Can>
@@ -111,7 +108,7 @@ function ChartOfAccountsContent() {
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <CardTitle>Accounts</CardTitle>
-            <CardDescription>GET /api/v1/gl/accounts · filter by name or code.</CardDescription>
+            <CardDescription>Search and maintain the authoritative chart powering every journal.</CardDescription>
           </div>
           <div className="flex w-full max-w-md gap-2">
             <Input
@@ -137,16 +134,14 @@ function ChartOfAccountsContent() {
               icon={<LibraryBig className="h-5 w-5" />}
               title="No GL accounts yet"
               description={
-                "Install the standard chart defined in StandardBankTemplateDefinition (via POST /api/v1/gl/setup/chart-of-accounts). " +
-                "Then wire operational mappings from Operational accounts."
+                "Install the bank's standard chart template, then wire operational mappings from the Operational accounts screen."
               }
               action={
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <Can permissions={[Permissions.GlApprove]}>
                     <StandardChartDialog
-                      defaultCreatedBy={username}
                       submitting={initChart.isPending}
-                      onSubmit={(v) => initChart.mutate(v)}
+                      onSubmit={(currency) => initChart.mutate(currency)}
                       triggerLabel="Install standard chart of accounts"
                     />
                   </Can>
@@ -219,25 +214,18 @@ function ChartOfAccountsContent() {
 }
 
 function StandardChartDialog({
-  defaultCreatedBy,
   submitting,
   onSubmit,
   triggerLabel = "Install standard chart of accounts",
   triggerClassName,
 }: {
-  defaultCreatedBy: string;
   submitting: boolean;
-  onSubmit: (v: { currency: string; createdBy: string }) => void;
+  onSubmit: (currency: string) => void;
   triggerLabel?: string;
   triggerClassName?: string;
 }) {
   const [open, setOpen] = React.useState(false);
   const [currency, setCurrency] = React.useState("USD");
-  const [createdBy, setCreatedBy] = React.useState(defaultCreatedBy);
-
-  React.useEffect(() => {
-    if (open) setCreatedBy(defaultCreatedBy);
-  }, [defaultCreatedBy, open]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -256,18 +244,13 @@ function StandardChartDialog({
         <DialogHeader>
           <DialogTitle>Standard chart of accounts</DialogTitle>
           <DialogDescription>
-            Calls POST /api/v1/gl/setup/chart-of-accounts. Existing codes are skipped. The definition lives in StandardBankTemplateDefinition on the
-            GL service.
+            Seeds the predefined template — existing codes are skipped; definition is owned by the GL service package.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-2">
           <div className="space-y-1.5">
             <Label className="text-xs uppercase tracking-wide text-muted-foreground">Base currency</Label>
             <Input value={currency} maxLength={3} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs uppercase tracking-wide text-muted-foreground">Created by (audit)</Label>
-            <Input value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
           </div>
         </div>
         <DialogFooter>
@@ -278,7 +261,7 @@ function StandardChartDialog({
             type="button"
             loading={submitting}
             onClick={() => {
-              onSubmit({ currency, createdBy });
+              onSubmit(currency);
               setOpen(false);
             }}
           >

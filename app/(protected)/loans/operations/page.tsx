@@ -94,7 +94,7 @@ function Content() {
             </select>
             <Input placeholder="Reason (optional)" value={batchReason} onChange={(e) => setBatchReason(e.target.value)} />
             <Button disabled={batch.isPending || !batchIds.trim()} onClick={() => batch.mutate()}>
-              POST /loan-accounts/batch/status-update
+              Apply batch status
             </Button>
           </CardContent>
         </Card>

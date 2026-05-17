@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,10 +25,20 @@ export default function TransactionLookupPage() {
 }
 
 function TransactionLookupContent() {
+  const searchParams = useSearchParams();
   const [id, setId] = React.useState("");
   const [refId, setRefId] = React.useState("");
   const [searchId, setSearchId] = React.useState<string | null>(null);
   const [searchRef, setSearchRef] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    const q = searchParams.get("id")?.trim();
+    if (!q) return;
+    setId(q);
+    setRefId("");
+    setSearchRef(null);
+    setSearchId(q);
+  }, [searchParams]);
 
   const byId = useQuery({
     queryKey: ["gl-transaction", "id", searchId],
@@ -66,7 +77,7 @@ function TransactionLookupContent() {
     <div className="space-y-6">
       <PageHeader
         title="GL transaction lookup"
-        description="GET /api/v1/gl/transactions/{id} · /reference/{referenceId} · debit/credit parity check."
+        description="Find a voucher by technical id or business reference, and confirm debit/credit balance."
       />
       <div className="grid gap-4 md:grid-cols-2">
         <Card>

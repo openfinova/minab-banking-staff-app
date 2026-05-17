@@ -43,7 +43,6 @@ import {
   transactionsApi,
   type InitiateTransactionRequest,
 } from "@/lib/api/modules/transaction-processing";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
 
 const TRANSACTION_TYPES = [
@@ -66,6 +65,40 @@ const STATUSES = [
   "REVERSED",
 ] as const;
 
+const FILTER_STORAGE = "minab-tp-tx-filters-v1";
+
+interface SavedTxFilters {
+  accountId?: string;
+  status?: string;
+  transactionType?: string;
+  fromDate?: string;
+  toDate?: string;
+  currency?: string;
+  reference?: string;
+  minAmount?: string;
+  maxAmount?: string;
+  pageSize?: number;
+}
+
+function loadSavedTxFilters(): SavedTxFilters | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(FILTER_STORAGE);
+    if (!raw) return null;
+    return JSON.parse(raw) as SavedTxFilters;
+  } catch {
+    return null;
+  }
+}
+
+function persistTxFilters(state: SavedTxFilters) {
+  try {
+    window.localStorage.setItem(FILTER_STORAGE, JSON.stringify(state));
+  } catch {
+    /* ignore */
+  }
+}
+
 export default function TpTransactionsPage() {
   return (
     <RouteGuard permissions={[Permissions.TransactionRead]}>
@@ -75,8 +108,8 @@ export default function TpTransactionsPage() {
 }
 
 function TpTransactionsContent() {
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
   const [page, setPage] = React.useState(0);
+  const [pageSize, setPageSize] = React.useState(20);
   const [accountId, setAccountId] = React.useState("");
   const [status, setStatus] = React.useState<string | undefined>();
   const [transactionType, setTransactionType] = React.useState<string | undefined>();
@@ -88,8 +121,49 @@ function TpTransactionsContent() {
   const [maxAmount, setMaxAmount] = React.useState("");
 
   React.useEffect(() => {
+    const saved = loadSavedTxFilters();
+    if (!saved) return;
+    if (saved.pageSize != null) setPageSize(saved.pageSize);
+    if (saved.accountId != null) setAccountId(saved.accountId);
+    if ("status" in saved) setStatus(saved.status);
+    if ("transactionType" in saved) setTransactionType(saved.transactionType);
+    if (saved.fromDate != null) setFromDate(saved.fromDate);
+    if (saved.toDate != null) setToDate(saved.toDate);
+    if (saved.currency != null) setCurrency(saved.currency);
+    if (saved.reference != null) setReference(saved.reference);
+    if (saved.minAmount != null) setMinAmount(saved.minAmount);
+    if (saved.maxAmount != null) setMaxAmount(saved.maxAmount);
+  }, []);
+
+  const saveFilters = React.useCallback(() => {
+    persistTxFilters({
+      pageSize,
+      accountId,
+      status,
+      transactionType,
+      fromDate,
+      toDate,
+      currency,
+      reference,
+      minAmount,
+      maxAmount,
+    });
+  }, [
+    accountId,
+    currency,
+    fromDate,
+    maxAmount,
+    minAmount,
+    pageSize,
+    reference,
+    status,
+    toDate,
+    transactionType,
+  ]);
+
+  React.useEffect(() => {
     setPage(0);
-  }, [accountId, status, transactionType, fromDate, toDate, currency, reference, minAmount, maxAmount]);
+  }, [accountId, status, transactionType, fromDate, toDate, currency, reference, minAmount, maxAmount, pageSize]);
 
   const list = useQuery({
     queryKey: [
@@ -104,11 +178,12 @@ function TpTransactionsContent() {
       reference,
       minAmount,
       maxAmount,
+      pageSize,
     ],
     queryFn: () =>
       transactionsApi.list({
         page,
-        size: 20,
+        size: pageSize,
         sort: "createdAt,desc",
         accountId: accountId.trim() || undefined,
         status,
@@ -122,15 +197,32 @@ function TpTransactionsContent() {
       }),
   });
 
+  const pageAmountSummary = React.useMemo(() => {
+    const rows = list.data?.content ?? [];
+    const totals = new Map<string, number>();
+    for (const r of rows) {
+      const amt = r.amount != null ? Number(r.amount) : NaN;
+      if (Number.isNaN(amt)) continue;
+      const ccy = (r.currency ?? "—").toString().trim() || "—";
+      totals.set(ccy, (totals.get(ccy) ?? 0) + amt);
+    }
+    if (!totals.size) return null as string | null;
+    return Array.from(totals.entries())
+      .map(
+        ([ccy, sum]) =>
+          `${ccy} ${sum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      )
+      .join(" · ");
+  }, [list.data?.content]);
+
   return (
     <div className="space-y-6">
       <PageHeader
-        title="TP transactions"
-        description="GET /api/v1/transactions — search and drill into lifecycle, history, and refunds."
+        title="Payment search"
+        description="Narrow down journal candidates for investigations, reversals, or customer callbacks. Saved views stay on this workstation only."
         actions={
           <Can permissions={[Permissions.PaymentInitiate]}>
             <InitiateDialog
-              defaultCreatedBy={username}
               onSuccess={() => {
                 void list.refetch();
               }}
@@ -140,9 +232,58 @@ function TpTransactionsContent() {
       />
 
       <Card>
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-          <CardDescription>Optional query parameters for the search endpoint.</CardDescription>
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <CardTitle>Filters</CardTitle>
+            <CardDescription>
+              Map filters to the story you are researching — debits in a corridor, a rail currency, or a booking
+              reference fragment.
+            </CardDescription>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={saveFilters}>
+              Save filter set
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const next = loadSavedTxFilters();
+                if (!next) return;
+                if (next.pageSize != null) setPageSize(next.pageSize);
+                setAccountId(next.accountId ?? "");
+                setStatus(next.status);
+                setTransactionType(next.transactionType);
+                setFromDate(next.fromDate ?? "");
+                setToDate(next.toDate ?? "");
+                setCurrency(next.currency ?? "");
+                setReference(next.reference ?? "");
+                setMinAmount(next.minAmount ?? "");
+                setMaxAmount(next.maxAmount ?? "");
+              }}
+            >
+              Reload saved
+            </Button>
+            <div className="grid gap-1.5">
+              <Label className="text-xs">Rows / page</Label>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => setPageSize(Number(v))}
+              >
+                <SelectTrigger className="h-9 w-[5.5rem]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[10, 20, 50, 100].map((n) => (
+                    <SelectItem key={n} value={String(n)}>
+                      {n}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <div className="space-y-1.5 md:col-span-2 lg:col-span-3">
@@ -154,7 +295,7 @@ function TpTransactionsContent() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label>Status</Label>
+            <Label>Lifecycle status</Label>
             <Select
               value={status ?? "__any__"}
               onValueChange={(v) => setStatus(v === "__any__" ? undefined : v)}
@@ -173,7 +314,7 @@ function TpTransactionsContent() {
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label>Type</Label>
+            <Label>Payment type</Label>
             <Select
               value={transactionType ?? "__any__"}
               onValueChange={(v) => setTransactionType(v === "__any__" ? undefined : v)}
@@ -200,19 +341,19 @@ function TpTransactionsContent() {
             <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label>Currency</Label>
+            <Label>Settlement currency (ISO)</Label>
             <Input value={currency} onChange={(e) => setCurrency(e.target.value)} placeholder="USD" />
           </div>
           <div className="space-y-1.5">
-            <Label>Reference contains</Label>
+            <Label>Booking reference contains</Label>
             <Input value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Substring" />
           </div>
           <div className="space-y-1.5">
-            <Label>Min amount</Label>
+            <Label>Minimum amount (inclusive)</Label>
             <Input value={minAmount} onChange={(e) => setMinAmount(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label>Max amount</Label>
+            <Label>Maximum amount (inclusive)</Label>
             <Input value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} />
           </div>
         </CardContent>
@@ -222,7 +363,19 @@ function TpTransactionsContent() {
         <CardHeader>
           <CardTitle>Results</CardTitle>
           <CardDescription>
-            {list.data?.totalElements != null ? `${list.data.totalElements} total` : null}
+            {list.data?.totalElements != null ? (
+              <span>
+                {list.data.totalElements.toLocaleString()} match
+                {list.data.totalElements === 1 ? "" : "es"}
+                {pageAmountSummary ? (
+                  <span className="block text-foreground">
+                    This page total: {pageAmountSummary}
+                  </span>
+                ) : null}
+              </span>
+            ) : (
+              "Adjust filters to search."
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -301,20 +454,13 @@ function TpTransactionsContent() {
   );
 }
 
-function InitiateDialog({
-  defaultCreatedBy,
-  onSuccess,
-}: {
-  defaultCreatedBy: string;
-  onSuccess: () => void;
-}) {
+function InitiateDialog({ onSuccess }: { onSuccess: () => void }) {
   const { toast } = useToast();
   const [open, setOpen] = React.useState(false);
   const [idempotencyKey, setIdempotencyKey] = React.useState("");
   const [transactionType, setTxnType] = React.useState<string>("P2P");
   const [amount, setAmount] = React.useState("");
   const [currency, setCurrency] = React.useState("USD");
-  const [createdBy, setCreatedBy] = React.useState(defaultCreatedBy);
   const [sourceAccountId, setSource] = React.useState("");
   const [destinationAccountId, setDest] = React.useState("");
   const [description, setDescription] = React.useState("");
@@ -328,7 +474,6 @@ function InitiateDialog({
         transactionType,
         amount: Number(amount),
         currency: currency.trim().toUpperCase(),
-        createdBy: createdBy.trim() || defaultCreatedBy,
         description: description.trim() || undefined,
         sourceAccountId: sourceAccountId.trim() || undefined,
         destinationAccountId: destinationAccountId.trim() || undefined,
@@ -393,10 +538,6 @@ function InitiateDialog({
               <Label>Currency</Label>
               <Input value={currency} onChange={(e) => setCurrency(e.target.value)} />
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Created by</Label>
-            <Input value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
           </div>
           <AccountResolveField
             instanceId="tp-init-src"

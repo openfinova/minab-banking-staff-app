@@ -158,7 +158,7 @@ function AccountRelationshipsContent() {
 
       <PageHeader
         title="Relationships"
-        description={`Parties linked to this account — GET /api/v1/accounts/${id}/relationships`}
+        description={`Co-borrowers, signers, and payout parties linked to this account.`}
         actions={
           <Can permissions={[Permissions.AccountWrite]}>
             <Button size="sm" asChild>
@@ -204,8 +204,7 @@ function AccountRelationshipsContent() {
         <CardHeader>
           <CardTitle>Permission check</CardTitle>
           <CardDescription>
-            POST /permissions/check?userProfileId=&amp;permission= — validates whether a user can perform an
-            action on this account.
+            Enter a staff user profile and permission name to see whether they may act on this account.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">

@@ -86,7 +86,6 @@ export interface CreateAccountBody {
   currency: string;
   /** Domestic account number — must match the server's account.number.regex (default ^[A-Z0-9]{8,20}$). */
   accountNumber: string;
-  createdBy: string;
 }
 
 /** Default regex enforced by the backend ValidAccountNumber when account.number.regex is not overridden. */
@@ -95,7 +94,6 @@ export const ACCOUNT_NUMBER_REGEX = /^[A-Z0-9]{8,20}$/;
 export interface UpdateAccountStatusBody {
   newStatus: AccountStatus;
   reason: string;
-  changedBy: string;
 }
 
 export interface ValidationResult {
@@ -173,7 +171,6 @@ export interface AccountRelationshipResponse {
 export interface AddRelationshipBody {
   userProfileId: string;
   relationshipType: RelationshipType;
-  createdBy: string;
 }
 
 export interface AddBeneficiaryBody {
@@ -184,7 +181,6 @@ export interface AddBeneficiaryBody {
   birthDate?: string;
   effectiveFrom?: string;
   effectiveUntil?: string;
-  createdBy: string;
 }
 
 export interface AccountHoldResponse {
@@ -222,7 +218,6 @@ export interface AddLimitBody {
   limitPeriod: LimitPeriod;
   maxAmount?: number;
   maxCount?: number;
-  createdBy: string;
 }
 
 export interface AccountTransactionResponse {
@@ -281,14 +276,13 @@ export interface BatchStatusUpdateBody {
   accountIds: string[];
   newStatus: AccountStatus;
   reason: string;
-  changedBy: string;
 }
 
 export interface BatchCloseBody {
   accountIds: string[];
   reason: string;
-  closedBy: string;
 }
+
 
 export type BatchResult = Record<string, string>;
 
@@ -299,6 +293,7 @@ export const accountsApi = {
     primaryUserProfileId?: string;
     page?: number;
     size?: number;
+    sort?: string;
   }) =>
     api.get<PageResponse<AccountResponse>>("/api/v1/accounts", {
       query: withPaging(
@@ -309,7 +304,7 @@ export const accountsApi = {
             ? { primaryUserProfileId: params.primaryUserProfileId.trim() }
             : {}),
         },
-        { page: params.page ?? 0, size: params.size ?? 20, sort: "createdAt,desc" },
+        { page: params.page ?? 0, size: params.size ?? 20, sort: params.sort ?? "createdAt,desc" },
       ),
     }),
 
@@ -452,10 +447,9 @@ export const accountsApi = {
   addLimit: (accountId: string, body: AddLimitBody) =>
     api.post<AccountLimitResponse>(`${accountPath(accountId)}/limits`, body),
 
-  removeLimit: (limitId: string, removedBy: string) =>
+  removeLimit: (limitId: string) =>
     request<void>(`/api/v1/accounts/limits/${encodeURIComponent(limitId)}`, {
       method: "DELETE",
-      query: { removedBy },
     }),
 
   checkLimit: (accountId: string, limitType: LimitType, amount: number) =>

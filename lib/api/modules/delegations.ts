@@ -56,4 +56,6 @@ export const delegationsApi = {
     api.get<UserSummary[]>("/api/v1/identity/delegations/suggestions/staff", {
       query: { q: q.trim(), limit },
     }),
+  transactionTypes: () =>
+    api.get<string[]>("/api/v1/identity/delegations/transaction-types"),
 };

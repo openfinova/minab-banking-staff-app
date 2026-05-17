@@ -129,10 +129,7 @@ function GuarantorRow({
 }) {
   const { toast } = useToast();
   const [nst, setNst] = React.useState<GuarantorStatus>("ACTIVE");
-  const [updBy, setUpdBy] = React.useState("staff");
-  const [relBy, setRelBy] = React.useState("staff");
   const [remReas, setRemReas] = React.useState("");
-  const [remBy, setRemBy] = React.useState("staff");
   return (
     <div className="border rounded p-3 text-sm space-y-2">
       <div className="font-mono text-[10px]">{g.id}</div>
@@ -163,12 +160,11 @@ function GuarantorRow({
             </option>
           ))}
         </select>
-        <Input className="h-8 w-24" value={updBy} onChange={(e) => setUpdBy(e.target.value)} />
         <Button
           size="sm"
           onClick={() =>
             loanGuarantorsApi
-              .updateStatus(loanId, g.id, { newStatus: nst, updatedBy: updBy })
+              .updateStatus(loanId, g.id, { newStatus: nst })
               .then(() => {
                 toast({ title: "Status" });
                 onChange();
@@ -178,13 +174,12 @@ function GuarantorRow({
         >
           Status
         </Button>
-        <Input className="h-8 w-24" value={relBy} onChange={(e) => setRelBy(e.target.value)} />
         <Button
           size="sm"
           variant="secondary"
           onClick={() =>
             loanGuarantorsApi
-              .release(loanId, g.id, { releasedBy: relBy })
+              .release(loanId, g.id)
               .then(() => {
                 toast({ title: "Released" });
                 onChange();
@@ -195,13 +190,12 @@ function GuarantorRow({
           Release
         </Button>
         <Input placeholder="Removal" className="h-8 max-w-[8rem]" value={remReas} onChange={(e) => setRemReas(e.target.value)} />
-        <Input className="h-8 w-20" value={remBy} onChange={(e) => setRemBy(e.target.value)} />
         <Button
           size="sm"
           variant="destructive"
           onClick={() =>
             loanGuarantorsApi
-              .remove(loanId, g.id, { removalReason: remReas || "Removed", removedBy: remBy })
+              .remove(loanId, g.id, { removalReason: remReas || "Removed" })
               .then(() => {
                 toast({ title: "Removed" });
                 onChange();

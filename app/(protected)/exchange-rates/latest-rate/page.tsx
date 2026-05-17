@@ -46,7 +46,7 @@ function Content() {
     <div className="space-y-6">
       <PageHeader
         title="Latest mid rate"
-        description="GET /api/v1/exchange/rate — current published mid rate for a pair and rate type."
+        description="Retrieve the published spot or forward mid for a currency pair right now."
       />
       <Card>
         <CardHeader>

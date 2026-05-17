@@ -146,7 +146,7 @@ export function CustomerExtendedEditor({ id, data }: { id: string; data: Custome
         <CardHeader>
           <CardTitle>Extended attributes</CardTitle>
           <CardDescription>
-            {`PUT /api/v1/customers/{id} — merges nationality, segment, demographics, and legal entity fields.`}
+            Maintain segmentation, nationality, demographics, or incorporation details aligned to customer type.
           </CardDescription>
         </CardHeader>
         <CardContent className="max-w-3xl space-y-4">
@@ -307,7 +307,7 @@ export function CustomerExtendedEditor({ id, data }: { id: string; data: Custome
       <Card>
         <CardHeader>
           <CardTitle>PEP &amp; sanctions</CardTitle>
-          <CardDescription>{`PATCH /api/v1/customers/{id}/compliance-flags`}</CardDescription>
+          <CardDescription>Toggle PEP and sanction screening outcomes for AML monitoring.</CardDescription>
         </CardHeader>
         <CardContent className="max-w-xl space-y-4">
           <label className="flex items-center gap-2 text-sm">

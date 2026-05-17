@@ -59,6 +59,32 @@ export interface ExchangeRateRequestBody {
   updatedBy?: string;
 }
 
+export interface ExchangeRateSyncResult {
+  rateDate: string | null;
+  providerPublicationDate: string | null;
+  providerId: string;
+  inserted: string[];
+  skippedAlreadyPresent: string[];
+  unsupportedByProvider: string[];
+}
+
+export interface ManagedRateRow {
+  id: string | null;
+  targetCurrency: string;
+  rate: number | null;
+  rateDate: string | null;
+  stale: boolean;
+  createdBy: string | null;
+  updatedBy: string | null;
+  lastChangedAt: string | null;
+}
+
+export interface ManagedRatesView {
+  baseCurrency: string;
+  today: string;
+  rows: ManagedRateRow[];
+}
+
 export const exchangeApi = {
   convert: (body: CurrencyConversionRequestBody) =>
     api.post<CurrencyConversionResponse>(`${BASE}/convert`, body),
@@ -114,15 +140,12 @@ export const exchangeApi = {
   createRate: (body: ExchangeRateRequestBody) =>
     api.post<ExchangeRateResponse>(`${BASE}/rates`, body),
 
-  updateRate: (id: string, body: ExchangeRateRequestBody, updatedBy: string) =>
-    api.put<ExchangeRateResponse>(`${BASE}/rates/${encodeURIComponent(id)}`, body, {
-      query: { updatedBy },
-    }),
+  updateRate: (id: string, body: ExchangeRateRequestBody) =>
+    api.put<ExchangeRateResponse>(`${BASE}/rates/${encodeURIComponent(id)}`, body),
 
-  deleteRate: (id: string, deletedBy: string) =>
+  deleteRate: (id: string) =>
     request<void>(`${BASE}/rates/${encodeURIComponent(id)}`, {
       method: "DELETE",
-      query: { deletedBy },
     }),
 
   getRatesHistory: (params: {
@@ -156,4 +179,8 @@ export const exchangeApi = {
         rateType: params.rateType ?? "SPOT",
       },
     }),
+
+  syncNow: () => api.post<ExchangeRateSyncResult>(`${BASE}/sync`),
+
+  getManagedRates: () => api.get<ManagedRatesView>(`${BASE}/managed-rates`),
 };

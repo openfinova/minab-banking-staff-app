@@ -23,26 +23,19 @@ import {
   RELATIONSHIP_ADD_HINT,
   RELATIONSHIP_ROLE_LABEL,
 } from "@/lib/accounts/relationship-ui";
-import { useAuthStore } from "@/lib/auth/auth-store";
 
 export function AccountAddRelationshipForm({ accountId }: { accountId: string }) {
   const router = useRouter();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
   const [userProfileId, setUserProfileId] = React.useState("");
   const [relType, setRelType] = React.useState<RelationshipType>("AUTHORIZED_USER");
-  const [createdBy, setCreatedBy] = React.useState(username);
-  React.useEffect(() => {
-    setCreatedBy(username);
-  }, [username]);
 
   const add = useMutation({
     mutationFn: () =>
       accountsApi.addRelationship(accountId, {
         userProfileId: userProfileId.trim(),
         relationshipType: relType,
-        createdBy: createdBy.trim() || username,
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["accounts", accountId, "relationships"] });
@@ -62,7 +55,7 @@ export function AccountAddRelationshipForm({ accountId }: { accountId: string })
     <Card className="max-w-2xl">
       <CardHeader>
         <CardTitle>Add relationship</CardTitle>
-        <CardDescription>POST /api/v1/accounts/{"{"}id{"}"}/relationships</CardDescription>
+        <CardDescription>Link another party to this account with a role and optional permissions.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <CustomerIdentityPicker
@@ -89,10 +82,6 @@ export function AccountAddRelationshipForm({ accountId }: { accountId: string })
           {RELATIONSHIP_ADD_HINT[relType] ? (
             <p className="text-xs text-muted-foreground">{RELATIONSHIP_ADD_HINT[relType]}</p>
           ) : null}
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="rel-cb">Created by</Label>
-          <Input id="rel-cb" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button

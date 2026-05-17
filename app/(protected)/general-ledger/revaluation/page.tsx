@@ -60,7 +60,7 @@ function RevaluationContent() {
     <div className="space-y-6">
       <PageHeader
         title="FX revaluation"
-        description="POST /api/v1/gl/revaluation with as-of date; GET /runs for history."
+        description="Run multi-currency remeasurement as of a date and review prior run history."
         actions={
           <Can permissions={[Permissions.GlApprove]}>
             <div className="flex flex-wrap items-end gap-2">

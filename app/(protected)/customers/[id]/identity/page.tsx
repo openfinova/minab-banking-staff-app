@@ -141,9 +141,7 @@ function CustomerIdentityContent() {
       <Card>
         <CardHeader>
           <CardTitle>Linked user</CardTitle>
-          <CardDescription>
-            {`GET /api/v1/identity/users/by-customer/{customerPartyId}`}
-          </CardDescription>
+          <CardDescription>Identity profile resolved from this customer's party identifier.</CardDescription>
         </CardHeader>
         <CardContent>
           {linked.isLoading ? (

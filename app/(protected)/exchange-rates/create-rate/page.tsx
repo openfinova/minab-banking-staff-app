@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { RateTypeSelect } from "@/components/exchange/exchange-ui";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
-import { useAuth } from "@/lib/auth/auth-provider";
 
 export default function ExchangeCreateRatePage() {
   return (
@@ -23,8 +22,6 @@ export default function ExchangeCreateRatePage() {
 }
 
 function Content() {
-  const { session } = useAuth();
-  const operator = session?.user.username ?? "";
   const { toast } = useToast();
   const [form, setForm] = React.useState<ExchangeRateRequestBody>({
     sourceCurrency: "USD",
@@ -36,17 +33,12 @@ function Content() {
   const [creating, setCreating] = React.useState(false);
 
   const onCreate = async () => {
-    if (!operator) {
-      toast({ variant: "destructive", title: "Missing operator identity" });
-      return;
-    }
     setCreating(true);
     try {
       await exchangeApi.createRate({
         ...form,
         sourceCurrency: form.sourceCurrency.trim().toUpperCase(),
         targetCurrency: form.targetCurrency.trim().toUpperCase(),
-        createdBy: operator,
       });
       toast({ title: "Exchange rate created" });
     } catch (e) {
@@ -62,7 +54,7 @@ function Content() {
     <div className="space-y-6">
       <PageHeader
         title="Create exchange rate"
-        description="POST /api/v1/exchange/rates — publish a new rate row (natural key: pair, date, type)."
+        description="Publish a fresh mid for a pair, effective date, and rate type (treasury control)."
       />
       <Card>
         <CardHeader>
@@ -136,7 +128,7 @@ function Content() {
             </div>
             <RateTypeSelect value={form.rateType} onChange={setRateType} label="Rate type" />
           </div>
-          <Button type="button" disabled={creating || !operator} onClick={onCreate}>
+          <Button type="button" disabled={creating} onClick={onCreate}>
             {creating ? "Creating…" : "Create"}
           </Button>
         </CardContent>

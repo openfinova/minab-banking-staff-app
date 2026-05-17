@@ -132,7 +132,16 @@ function RoleDetail() {
       <Card>
         <CardHeader>
           <CardTitle>Permissions</CardTitle>
-          <CardDescription>Set the full permission list for this role.</CardDescription>
+          <CardDescription>
+            {role.systemRole ? (
+              <>
+                System roles cannot have permissions added, removed, or replaced from this console.
+                Use a custom role if you need a different bundle; ADMIN keeps full platform access by design.
+              </>
+            ) : (
+              <>Set the full permission list for this role. Changing permissions may require an approved ROLE_PERMISSION_CHANGE workflow when enforcement is enabled.</>
+            )}
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {catalogQuery.isLoading ? (
@@ -145,12 +154,13 @@ function RoleDetail() {
                 return (
                   <label
                     key={value}
-                    className="flex items-start gap-2 rounded px-2 py-1 hover:bg-accent"
+                    className={`flex items-start gap-2 rounded px-2 py-1 hover:bg-accent ${role.systemRole ? "opacity-60" : ""}`}
                   >
                     <input
                       type="checkbox"
                       className="mt-1"
                       checked={checked}
+                      disabled={role.systemRole}
                       onChange={(e) =>
                         setSelected((prev) =>
                           e.target.checked
@@ -165,11 +175,13 @@ function RoleDetail() {
               })}
             </div>
           )}
-          <Can permissions={[Permissions.AdminRolesWrite]}>
-            <Button onClick={() => setPermissions.mutate()} loading={setPermissions.isPending}>
-              Save permissions
-            </Button>
-          </Can>
+          {!role.systemRole ? (
+            <Can permissions={[Permissions.AdminRolesWrite]}>
+              <Button onClick={() => setPermissions.mutate()} loading={setPermissions.isPending}>
+                Save permissions
+              </Button>
+            </Can>
+          ) : null}
         </CardContent>
       </Card>
     </div>

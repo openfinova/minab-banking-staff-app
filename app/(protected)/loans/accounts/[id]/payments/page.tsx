@@ -145,7 +145,7 @@ function PayContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Loan payments" description="POST /api/v1/loan-payments" />
+      <PageHeader title="Loan payments" description="Record repayments against principal, interest, and charges." />
       <LoanServicingLinks loanAccountId={id} />
 
       {totals.data ? (

@@ -52,7 +52,7 @@ function TrialBalanceContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Trial balance" description="GET /api/v1/gl/balances/trial-balance" />
+      <PageHeader title="Trial balance" description="Period-end debits, credits, and net by GL account." />
       <Card>
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>

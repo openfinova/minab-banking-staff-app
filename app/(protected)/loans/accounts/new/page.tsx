@@ -55,7 +55,7 @@ function NewAccountContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New loan account" description="POST /api/v1/loan-accounts from approved application" />
+      <PageHeader title="New loan account" description="Book a facility from an approved application and ready it for disbursement." />
 
       <Card>
         <CardHeader>

@@ -10,6 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -55,10 +62,24 @@ export default function DelegationsPage() {
 function DelegationsContent() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const txTypesQuery = useQuery({
+    queryKey: ["delegations", "transaction-types"],
+    queryFn: delegationsApi.transactionTypes,
+  });
+  const transactionTypeOptions =
+    txTypesQuery.data?.length ? txTypesQuery.data : ["USER_PROVISIONING"];
   const [activeDraft, setActiveDraft] = React.useState({
     delegateeUserId: "",
-    transactionType: "USER_PROVISIONING",
+    transactionType: transactionTypeOptions[0],
   });
+
+  React.useEffect(() => {
+    const opts = txTypesQuery.data;
+    if (!opts?.length) return;
+    setActiveDraft((s) =>
+      opts.includes(s.transactionType) ? s : { ...s, transactionType: opts[0] },
+    );
+  }, [txTypesQuery.data]);
   const [activeLookup, setActiveLookup] = React.useState<{
     delegateeUserId: string;
     transactionType: string;
@@ -195,7 +216,7 @@ function DelegationsContent() {
         description="Delegation of authority between staff users: lookup active chains, browse by user, or create."
         actions={
           <Can permissions={[Permissions.AdminDoaWrite]}>
-            <CreateDelegationDialog />
+            <CreateDelegationDialog transactionTypeOptions={transactionTypeOptions} />
           </Can>
         }
       />
@@ -220,13 +241,24 @@ function DelegationsContent() {
             />
             <div className="space-y-1.5">
               <Label>Transaction type</Label>
-              <Input
-                className="md:w-[260px]"
+              <Select
                 value={activeDraft.transactionType}
-                onChange={(e) =>
-                  setActiveDraft((s) => ({ ...s, transactionType: e.target.value }))
+                onValueChange={(v) =>
+                  setActiveDraft((s) => ({ ...s, transactionType: v }))
                 }
-              />
+                disabled={txTypesQuery.isLoading}
+              >
+                <SelectTrigger className="md:w-[260px]">
+                  <SelectValue placeholder="Choose transaction type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {transactionTypeOptions.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button type="button" onClick={runActiveLookup}>
               <Search className="h-4 w-4" /> Lookup
@@ -297,7 +329,11 @@ function DelegationsContent() {
   );
 }
 
-function CreateDelegationDialog() {
+function CreateDelegationDialog({
+  transactionTypeOptions,
+}: {
+  transactionTypeOptions: string[];
+}) {
   const [open, setOpen] = React.useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -306,7 +342,7 @@ function CreateDelegationDialog() {
     defaultValues: {
       delegatedFromUserId: "",
       delegatedToUserId: "",
-      transactionType: "",
+      transactionType: "USER_PROVISIONING",
       validFrom: "",
       validUntil: "",
       currency: "",
@@ -314,6 +350,14 @@ function CreateDelegationDialog() {
       actingGlApprovalRole: "",
     },
   });
+
+  React.useEffect(() => {
+    if (!open || !transactionTypeOptions.length) return;
+    const cur = form.getValues("transactionType")?.trim();
+    if (!cur || !transactionTypeOptions.includes(cur)) {
+      form.setValue("transactionType", transactionTypeOptions[0]);
+    }
+  }, [open, transactionTypeOptions, form]);
 
   const create = useMutation({
     mutationFn: (input: CreateDelegationInput) => {
@@ -400,12 +444,29 @@ function CreateDelegationDialog() {
           />
           <div className="space-y-1.5">
             <Label>Transaction type</Label>
-            <Input {...form.register("transactionType")} placeholder="e.g. USER_PROVISIONING" />
-            {form.formState.errors.transactionType ? (
-              <p className="text-xs text-destructive">
-                {form.formState.errors.transactionType.message}
-              </p>
-            ) : null}
+            <Controller
+              name="transactionType"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose transaction type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {transactionTypeOptions.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {t}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {fieldState.error ? (
+                    <p className="text-xs text-destructive">{fieldState.error.message}</p>
+                  ) : null}
+                </>
+              )}
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

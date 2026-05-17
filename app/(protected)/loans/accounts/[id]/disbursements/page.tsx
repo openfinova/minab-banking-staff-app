@@ -120,7 +120,7 @@ function Content() {
     <div className="space-y-6">
       <PageHeader
         title="Disbursements"
-        description={`Pending: ${pending.data ?? "…"} — /api/v1/loan-accounts/${id}/disbursements`}
+        description={`Pending: ${pending.data ?? "…"} — record funding tranches and track disbursement status.`}
       />
       <LoanServicingLinks loanAccountId={id} />
 

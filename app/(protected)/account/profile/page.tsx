@@ -32,7 +32,7 @@ function ProfileContent() {
       <Card>
         <CardHeader>
           <CardTitle>Account details</CardTitle>
-          <CardDescription>Sourced from `/api/v1/identity/me`.</CardDescription>
+          <CardDescription>Profile fields sourced from your signed-in identity session.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-2">
           {isLoading ? (

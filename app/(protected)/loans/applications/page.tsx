@@ -87,7 +87,7 @@ function ApplicationsContent() {
     <div className="space-y-6">
       <PageHeader
         title="Loan applications"
-        description="Workflow queues — /api/v1/loan-applications"
+        description="Submission and underwriting queues grouped by reviewer state."
         actions={
           <Button asChild>
             <Link href="/loans/applications/new">New application</Link>

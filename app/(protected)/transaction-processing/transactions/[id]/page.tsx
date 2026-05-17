@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -26,12 +27,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { StatusBadge } from "@/components/data/status-badge";
+import { ConfirmAction } from "@/components/data/confirm-action";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import { transactionsApi } from "@/lib/api/modules/transaction-processing";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
 import { formatDateTime } from "@/lib/utils";
 
@@ -48,7 +49,8 @@ function TpTransactionDetailContent() {
   const id = String(params.id ?? "");
   const { toast } = useToast();
   const qc = useQueryClient();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
+
+  const [fullRefundOpen, setFullRefundOpen] = React.useState(false);
 
   const detail = useQuery({
     queryKey: ["tp-transaction", id],
@@ -78,10 +80,12 @@ function TpTransactionDetailContent() {
 
   const fullRefund = useMutation({
     mutationFn: (reason: string) =>
-      transactionsApi.fullRefund(id, { originalTransactionId: id, reason, initiatedBy: username }),
+      transactionsApi.fullRefund(id, { originalTransactionId: id, reason }),
     onSuccess: () => {
       toast({ title: "Full refund initiated" });
       void qc.invalidateQueries({ queryKey: ["tp-transaction"] });
+      void qc.invalidateQueries({ queryKey: ["tp-transaction-refundable", id] });
+      setFullRefundOpen(false);
     },
     onError: (e) =>
       toast({ variant: "destructive", title: "Refund failed", description: describeApiError(e) }),
@@ -93,15 +97,20 @@ function TpTransactionDetailContent() {
         originalTransactionId: id,
         reason,
         refundAmount: amount,
-        initiatedBy: username,
       }),
     onSuccess: () => {
       toast({ title: "Partial refund initiated" });
       void qc.invalidateQueries({ queryKey: ["tp-transaction"] });
+      void qc.invalidateQueries({ queryKey: ["tp-transaction-refundable", id] });
     },
     onError: (e) =>
       toast({ variant: "destructive", title: "Refund failed", description: describeApiError(e) }),
   });
+
+  const remRaw = refundable.data?.remainingRefundable ?? refundable.data?.["remainingRefundable"];
+  const remaining =
+    remRaw !== undefined && remRaw !== null && !Number.isNaN(Number(remRaw)) ? Number(remRaw) : NaN;
+  const canRefund = refundable.data?.isRefundable === true && !Number.isNaN(remaining) && remaining > 0;
 
   if (!id) {
     return <p className="text-sm text-muted-foreground">Missing transaction id.</p>;
@@ -121,7 +130,7 @@ function TpTransactionDetailContent() {
       <Card>
         <CardHeader>
           <CardTitle>Summary</CardTitle>
-          <CardDescription>GET /api/v1/transactions/{`{id}`}</CardDescription>
+          <CardDescription>Posting detail, narration, ledger links, and booking metadata.</CardDescription>
         </CardHeader>
         <CardContent>
           {detail.isLoading ? (
@@ -180,27 +189,66 @@ function TpTransactionDetailContent() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Refunds</CardTitle>
-          <CardDescription>Full and partial refunds require transaction:write.</CardDescription>
+          <CardTitle>Refunds & credits</CardTitle>
+          <CardDescription>
+            Credits the customer for all or part of the settled amount. Both paths are maker-controlled and need a
+            substantiated reason.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {refundable.data ? (
-            <pre className="rounded-md bg-muted p-3 text-xs">{JSON.stringify(refundable.data, null, 2)}</pre>
+            <div className="rounded-md border border-destructive/20 bg-destructive/5 p-4 text-sm">
+              <p>
+                <span className="text-muted-foreground">Remaining refundable</span>{" "}
+                <span className="font-semibold">
+                  {Number.isNaN(remaining) ? "—" : remaining.toString()} {detail.data?.currency ?? ""}
+                </span>
+              </p>
+              <p className={canRefund ? "mt-1 text-muted-foreground" : "mt-1 text-destructive"}>
+                {canRefund
+                  ? "Use a partial credit when only part of the obligation should be unwound."
+                  : "This payment is not refundable in its current lifecycle state or the balance is exhausted."}
+              </p>
+            </div>
           ) : refundable.isLoading ? (
             <Skeleton className="h-16 w-full" />
           ) : null}
           <Can permissions={[Permissions.TransactionWrite]}>
-            <div className="flex flex-wrap gap-2">
-              <RefundReasonDialog
-                title="Full refund"
-                confirmLabel="Start full refund"
-                onConfirm={(reason) => fullRefund.mutate(reason)}
-              />
-              <PartialRefundDialog
-                onConfirm={({ reason, amount }) => partialRefund.mutate({ reason, amount })}
-              />
-            </div>
+            {detail.data ? (
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  disabled={!canRefund || fullRefund.isPending}
+                  onClick={() => setFullRefundOpen(true)}
+                >
+                  Full credit (full refund)
+                </Button>
+                <PartialRefundDialog
+                  maxRefund={Number.isNaN(remaining) ? undefined : remaining}
+                  currency={detail.data.currency}
+                  disabled={!canRefund}
+                  onConfirm={({ reason, amount }) => partialRefund.mutate({ reason, amount })}
+                />
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Load the summary to enable refund actions.</p>
+            )}
           </Can>
+          <ConfirmAction
+            open={fullRefundOpen}
+            onOpenChange={setFullRefundOpen}
+            title="Post a full credit against this payment?"
+            description="This starts the full refund rails flow. Confirm the customer is entitled to the full remaining amount and that no duplicate credit will be posted."
+            confirmLabel="Start full refund"
+            destructive
+            reasonRequired
+            reasonMinLength={12}
+            reasonLabel="Remediation reason"
+            onConfirm={async (reason) => {
+              await fullRefund.mutateAsync(reason);
+            }}
+          />
           {refunds.data?.length ? (
             <Table>
               <TableHeader>
@@ -269,79 +317,74 @@ function TpTransactionDetailContent() {
   );
 }
 
-function RefundReasonDialog({
-  title,
-  confirmLabel,
-  onConfirm,
-}: {
-  title: string;
-  confirmLabel: string;
-  onConfirm: (reason: string) => void;
-}) {
-  const [open, setOpen] = React.useState(false);
-  const [reason, setReason] = React.useState("");
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="secondary">{title}</Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-2">
-          <Label>Reason</Label>
-          <Input value={reason} onChange={(e) => setReason(e.target.value)} />
-          <Button
-            type="button"
-            disabled={!reason.trim()}
-            onClick={() => {
-              onConfirm(reason.trim());
-              setOpen(false);
-              setReason("");
-            }}
-          >
-            {confirmLabel}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 function PartialRefundDialog({
+  maxRefund,
+  currency,
+  disabled,
   onConfirm,
 }: {
+  maxRefund?: number;
+  currency?: string;
+  disabled?: boolean;
   onConfirm: (v: { reason: string; amount: number }) => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const [reason, setReason] = React.useState("");
   const [amount, setAmount] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+
+  const submit = () => {
+    setError(null);
+    const trimmed = reason.trim();
+    const n = Number(amount);
+    if (trimmed.length < 10) {
+      setError("Reason must be at least 10 characters.");
+      return;
+    }
+    if (!Number.isFinite(n) || n <= 0) {
+      setError("Enter a positive amount.");
+      return;
+    }
+    if (maxRefund != null && n > maxRefund + 1e-9) {
+      setError(`Amount cannot exceed the remaining refundable balance (${maxRefund}).`);
+      return;
+    }
+    onConfirm({ reason: trimmed, amount: n });
+    setOpen(false);
+    setReason("");
+    setAmount("");
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Partial refund</Button>
+        <Button variant="outline" disabled={disabled}>
+          Partial credit
+        </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Partial refund</DialogTitle>
+          <DialogTitle>Partial credit</DialogTitle>
         </DialogHeader>
         <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Partial credits reduce customer exposure without unwinding the full original posting.
+          </p>
+          {maxRefund != null ? (
+            <p className="text-sm">
+              Ceiling:{" "}
+              <span className="font-semibold">
+                {maxRefund} {currency ?? ""}
+              </span>
+            </p>
+          ) : null}
           <Label>Amount</Label>
-          <Input value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
           <Label>Reason</Label>
-          <Input value={reason} onChange={(e) => setReason(e.target.value)} />
-          <Button
-            type="button"
-            disabled={!reason.trim() || !amount.trim()}
-            onClick={() => {
-              onConfirm({ reason: reason.trim(), amount: Number(amount) });
-              setOpen(false);
-              setReason("");
-              setAmount("");
-            }}
-          >
-            Submit
+          <Textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Incident id, regulator instruction, goodwill policy…" />
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          <Button type="button" onClick={submit}>
+            Post partial credit
           </Button>
         </div>
       </DialogContent>

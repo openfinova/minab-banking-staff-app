@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
 import {
   Coins,
   Gauge,
@@ -12,33 +13,36 @@ import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/ca
 import { PageHeader } from "@/components/ui/page-header";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
+import { Badge } from "@/components/ui/badge";
+import { compensationApi } from "@/lib/api/modules/transaction-processing";
+import { useAuth } from "@/lib/auth/auth-provider";
 
 const links = [
   {
     href: "/transaction-processing/transactions",
     title: "Transactions",
-    description: "Search, initiate, refunds — /api/v1/transactions",
+    description: "Journal search, initiation, and credit-back handling",
     icon: List,
     permission: Permissions.TransactionRead,
   },
   {
     href: "/transaction-processing/fees/rules",
     title: "Fee rules",
-    description: "Configure fee rules — /api/v1/fees/rules",
+    description: "Product tariff configuration for payment rails",
     icon: Coins,
     permission: Permissions.FeeRead,
   },
   {
     href: "/transaction-processing/fees/waivers",
     title: "Fee waivers",
-    description: "Waivers by customer/account id",
+    description: "Account-scoped relief and campaigns",
     icon: Coins,
     permission: Permissions.FeeRead,
   },
   {
     href: "/transaction-processing/velocity-limits",
     title: "Velocity limits",
-    description: "Limits and breaches — /api/v1/velocity-limits",
+    description: "Per-account velocity caps and breach investigations.",
     icon: Gauge,
     permission: Permissions.VelocityLimitRead,
   },
@@ -52,13 +56,23 @@ const links = [
   {
     href: "/transaction-processing/account-transactions",
     title: "Account transactions",
-    description: "Statement history and GL link — /api/v1/accounts/…/transactions",
+    description: "Account-level history, GL voucher lookup, and corrective links.",
     icon: Wallet,
     permission: Permissions.AccountRead,
   },
 ] as const;
 
 export default function TransactionProcessingOverviewPage() {
+  const { can } = useAuth();
+  const allowComp = can([Permissions.CompensationRead], "all");
+  const failedComp = useQuery({
+    queryKey: ["tp-overview", "comp-failed-count"],
+    queryFn: compensationApi.failed,
+    enabled: allowComp,
+    refetchInterval: 60_000,
+  });
+  const failCount = failedComp.data?.length ?? 0;
+
   return (
     <RouteGuard
       permissions={[
@@ -84,6 +98,11 @@ export default function TransactionProcessingOverviewPage() {
                     <CardTitle className="flex items-center gap-2 text-base">
                       <item.icon className="h-4 w-4" />
                       {item.title}
+                      {item.href === "/transaction-processing/compensation/workflows" && failCount ? (
+                        <Badge variant="destructive" className="ml-1 text-[10px]">
+                          {failCount} failed
+                        </Badge>
+                      ) : null}
                     </CardTitle>
                     <CardDescription>{item.description}</CardDescription>
                   </CardHeader>

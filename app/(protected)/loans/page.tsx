@@ -1,12 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { RouteGuard } from "@/components/rbac/route-guard";
+import {
+  ClipboardList,
+  CreditCard,
+  FileSpreadsheet,
+  Package,
+  UserPlus,
+  Wallet,
+  Wrench,
+} from "lucide-react";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
-import { navSections } from "@/lib/nav/navigation";
-import { cn } from "@/lib/utils";
 
 const loanPerms = [
   Permissions.LoanRead,
@@ -19,46 +26,96 @@ const loanPerms = [
   Permissions.LoanRestructureApprove,
   Permissions.LoanCollect,
   Permissions.LoanCollectApprove,
-];
+] as const;
+
+const links = [
+  {
+    href: "/loans/products",
+    title: "Products",
+    description: "Maintain loan products, tiers, and pricing parameters.",
+    icon: Package,
+    permissions: [Permissions.LoanRead] as const,
+    mode: "any" as const,
+  },
+  {
+    href: "/loans/applications",
+    title: "Applications",
+    description: "Work the origination queue from intake to decision.",
+    icon: ClipboardList,
+    permissions: [Permissions.LoanRead] as const,
+    mode: "any" as const,
+  },
+  {
+    href: "/loans/applications/new",
+    title: "New application",
+    description: "Start a new credit application for a customer.",
+    icon: UserPlus,
+    permissions: [Permissions.LoanWrite] as const,
+    mode: "any" as const,
+  },
+  {
+    href: "/loans/accounts",
+    title: "Accounts",
+    description: "Servicing workspace for booked loan accounts.",
+    icon: Wallet,
+    permissions: [Permissions.LoanRead] as const,
+    mode: "any" as const,
+  },
+  {
+    href: "/loans/payments",
+    title: "Payments",
+    description: "Collect and allocate payments across loan accounts.",
+    icon: CreditCard,
+    permissions: [Permissions.LoanRead] as const,
+    mode: "any" as const,
+  },
+  {
+    href: "/loans/operations",
+    title: "Operations",
+    description: "Batch status moves, write-offs, restructuring, and tools.",
+    icon: Wrench,
+    permissions: [
+      Permissions.LoanWrite,
+      Permissions.LoanWriteOff,
+      Permissions.LoanRestructure,
+    ] as const,
+    mode: "any" as const,
+  },
+  {
+    href: "/loans/reports",
+    title: "Reports",
+    description: "Portfolio, arrears, and exposure reporting.",
+    icon: FileSpreadsheet,
+    permissions: [Permissions.LoanRead] as const,
+    mode: "any" as const,
+  },
+] as const;
 
 export default function LoansOverviewPage() {
-  const loans = navSections.find((s) => s.id === "loans");
-
   return (
-    <RouteGuard permissions={loanPerms} mode="any">
+    <RouteGuard permissions={[...loanPerms]} mode="any">
       <div className="space-y-6">
         <PageHeader
           title="Loans"
-          description="Lending catalog, origination, servicing, disbursements, schedules, payments, restructuring, early settlement, collateral, guarantors, and collections — all backed by /api/v1/loan-* services."
+          description="Origination queues through servicing shortcuts — disbursements, payments, restructuring, collateral, collections, and reporting."
         />
-        <Card>
-          <CardHeader>
-            <CardTitle>Module routes</CardTitle>
-            <CardDescription>Each entry maps to loan REST controllers (see item tooltips).</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {loans?.items.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex flex-col rounded-md border border-border/80 bg-card px-3 py-2 text-sm shadow-sm transition-colors",
-                      "hover:bg-accent/40",
-                    )}
-                  >
-                    <span className="font-medium">{item.label}</span>
-                    {item.title ? (
-                      <span className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{item.title}</span>
-                    ) : (
-                      <span className="mt-0.5 font-mono text-[10px] text-muted-foreground">{item.href}</span>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {links.map((item) => (
+            <RouteGuard key={item.href} permissions={[...item.permissions]} mode={item.mode}>
+              <Link href={item.href} className="block rounded-lg transition-opacity hover:opacity-90">
+                <Card className="h-full">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </CardTitle>
+                    <CardDescription>{item.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            </RouteGuard>
+          ))}
+        </div>
       </div>
     </RouteGuard>
   );

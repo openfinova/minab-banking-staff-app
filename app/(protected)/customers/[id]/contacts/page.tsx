@@ -161,7 +161,7 @@ function CustomerContactsContent() {
             <Button variant="outline" size="sm" asChild>
               <Link href={`/customers/${customerId}`}>Back to customer</Link>
             </Button>
-            <span className="text-muted-foreground">{`GET /api/v1/customers/{id}/contacts`}</span>
+            <span className="text-muted-foreground text-sm">Phones, emails, and secure contact channels.</span>
           </span>
         }
         actions={
@@ -181,7 +181,9 @@ function CustomerContactsContent() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{editContactId ? "Edit contact" : "Add contact"}</DialogTitle>
-                  <DialogDescription>{`PUT or POST /api/v1/customers/{id}/contacts`}</DialogDescription>
+                  <DialogDescription>
+                    {editContactId ? "Update an existing contact channel." : "Register a new validated contact method."}
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-3 py-2">
                   <div className="grid gap-2">

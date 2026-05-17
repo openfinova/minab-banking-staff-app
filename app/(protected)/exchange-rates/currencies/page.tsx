@@ -29,7 +29,7 @@ function ExchangeCurrenciesContent() {
     <div className="space-y-6">
       <PageHeader
         title="Supported currencies"
-        description="GET /api/v1/exchange/currencies — ISO codes available for FX operations."
+        description="Browse ISO codes the bank has enabled for pricing, limits, and postings."
       />
       <Card>
         <CardHeader>

@@ -104,8 +104,8 @@ function AccountTxContent() {
         <CardHeader>
           <CardTitle>History</CardTitle>
           <CardDescription>
-            Resolve an account like Account lookup (id, number, IBAN), or search customers (name / email / phone /
-            customer # / UUID) and pick the primary-holder account. Then GET /api/v1/accounts/:accountId/transactions.
+            Resolve an account (id, number, IBAN) or find a customer and pick the primary-holder account, then review
+            posted movements and GL links.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -207,7 +207,7 @@ function AccountTxContent() {
                 disabled={!lookupId.trim() || !glLinkId.trim() || linkGl.isPending}
                 onClick={() => linkGl.mutate()}
               >
-                PATCH gl-link
+                Link to GL posting
               </Button>
             </div>
           </Can>

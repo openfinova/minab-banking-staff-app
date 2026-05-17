@@ -34,7 +34,7 @@ export interface CustomerQuickLookupProps {
 }
 
 /**
- * Debounced directory-style search (GET /api/v1/customers?q=…) with result list.
+ * Debounced directory-style customer search with an inline pick list.
  * Provide {@link hrefForCustomer} for navigation, {@link onPickCustomer} to fill a form, or both.
  */
 export function CustomerQuickLookup({

@@ -130,7 +130,7 @@ function CompensationWorkflowsContent() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base">Report window</CardTitle>
-          <CardDescription>GET /api/v1/compensation/workflows/report</CardDescription>
+          <CardDescription>Open the compensation workflow backlog and throughput summary.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <div>

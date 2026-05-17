@@ -113,7 +113,7 @@ function AccountsContent() {
     <div className="space-y-6">
       <PageHeader
         title="Loan accounts"
-        description="Portfolio slices — /api/v1/loan-accounts"
+        description="Slice the live loan book by lifecycle status — open a facility for deep servicing."
         actions={
           <Button asChild>
             <Link href="/loans/accounts/new">New account</Link>
@@ -124,7 +124,7 @@ function AccountsContent() {
       <Card>
         <CardHeader>
           <CardTitle>Browse</CardTitle>
-          <CardDescription>Backend has no unfiltered “all accounts”; pick a slice.</CardDescription>
+          <CardDescription>Pick a portfolio slice — there is no single unfiltered “all loans” view.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid gap-1.5 sm:max-w-xs">

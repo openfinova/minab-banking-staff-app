@@ -74,7 +74,7 @@ function NewAppContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New loan application" description="POST /api/v1/loan-applications" />
+      <PageHeader title="New loan application" description="Start an application with product, amount, and party details." />
 
       <Card>
         <CardHeader>

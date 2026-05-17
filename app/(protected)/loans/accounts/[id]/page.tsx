@@ -223,7 +223,7 @@ function AccountDetail() {
             </Select>
             <Input placeholder="Reason" value={statusReason} onChange={(e) => setStatusReason(e.target.value)} />
             <Button size="sm" disabled={patchStatus.isPending} onClick={() => patchStatus.mutate()}>
-              PATCH status
+              Apply status
             </Button>
           </div>
 
@@ -232,7 +232,7 @@ function AccountDetail() {
               <h4 className="font-medium">Disburse</h4>
               <Input type="date" value={disbDate} onChange={(e) => setDisbDate(e.target.value)} />
               <Button size="sm" disabled={disburse.isPending} onClick={() => disburse.mutate()}>
-                POST disburse
+                Record disbursement
               </Button>
             </div>
           </Can>
@@ -289,7 +289,7 @@ function AccountDetail() {
               <Input placeholder="Penalties Δ" value={pend} onChange={(e) => setPend(e.target.value)} />
             </div>
             <Button size="sm" variant="outline" disabled={balances.isPending} onClick={() => balances.mutate()}>
-              PUT balances
+              Apply balance adjustments
             </Button>
           </div>
         </CardContent>

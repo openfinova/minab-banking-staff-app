@@ -163,7 +163,7 @@ function NewCustomerContent() {
     <div className="space-y-6">
       <PageHeader
         title="New customer"
-        description="POST /api/v1/customers — maps to the full Customer entity (demographics, incorporation, AML flags)."
+        description="Onboard a new party with demographics, incorporation, and initial compliance flags."
       />
       <form onSubmit={submit} className="space-y-6">
         <Card>

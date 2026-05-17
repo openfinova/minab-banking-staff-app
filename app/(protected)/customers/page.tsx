@@ -1,54 +1,71 @@
 "use client";
 
 import Link from "next/link";
-import { RouteGuard } from "@/components/rbac/route-guard";
+import { ClipboardList, IdCard, List, UserPlus } from "lucide-react";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
-import { navSections } from "@/lib/nav/navigation";
-import { cn } from "@/lib/utils";
+
+const links = [
+  {
+    href: "/customers/directory",
+    title: "Directory",
+    description: "Browse, search, quick pick, and tax-ID lookup on the master file.",
+    icon: List,
+    permissions: [Permissions.CustomerRead] as const,
+  },
+  {
+    href: "/customers/new",
+    title: "New customer",
+    description: "Onboard a new customer and capture core profile data.",
+    icon: UserPlus,
+    permissions: [Permissions.CustomerWrite] as const,
+  },
+  {
+    href: "/customers/kyc-hub",
+    title: "KYC workspace",
+    description: "KYC status, tasks, and evidence by customer.",
+    icon: ClipboardList,
+    permissions: [Permissions.CustomerRead] as const,
+  },
+  {
+    href: "/customers/document-hub",
+    title: "ID documents",
+    description: "Identity documents and verification artefacts.",
+    icon: IdCard,
+    permissions: [Permissions.CustomerPiiRead] as const,
+  },
+] as const;
 
 export default function CustomersOverviewPage() {
-  const section = navSections.find((s) => s.id === "customers");
-
   return (
-    <RouteGuard permissions={[Permissions.CustomerRead, Permissions.CustomerWrite]} mode="any">
+    <RouteGuard
+      permissions={[Permissions.CustomerRead, Permissions.CustomerWrite, Permissions.CustomerPiiRead]}
+      mode="any"
+    >
       <div className="space-y-6">
         <PageHeader
           title="Customers"
-          description="Management tools for customer profiles, contacts, addresses, relationships, and KYC workflows (backend /api/v1/customers)."
+          description="Manage customer profiles, contacts, addresses, relationships, and KYC workflows."
         />
-        <Card>
-          <CardHeader>
-            <CardTitle>Module routes</CardTitle>
-            <CardDescription>
-              Sub-pages map to the customer service controllers: core CRUD, contacts, addresses,
-              relationships, and KYC under each customer id.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {section?.items.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={cn(
-                      "flex flex-col rounded-md border border-border/80 bg-card px-3 py-2 text-sm shadow-sm transition-colors",
-                      "hover:bg-accent/40",
-                    )}
-                  >
-                    <span className="font-medium">{item.label}</span>
-                    {item.title ? (
-                      <span className="mt-0.5 text-xs text-muted-foreground line-clamp-2">{item.title}</span>
-                    ) : (
-                      <span className="mt-0.5 font-mono text-[10px] text-muted-foreground">{item.href}</span>
-                    )}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {links.map((item) => (
+            <RouteGuard key={item.href} permissions={[...item.permissions]} mode="any">
+              <Link href={item.href} className="block rounded-lg transition-opacity hover:opacity-90">
+                <Card className="h-full">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </CardTitle>
+                    <CardDescription>{item.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
+            </RouteGuard>
+          ))}
+        </div>
       </div>
     </RouteGuard>
   );

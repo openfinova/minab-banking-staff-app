@@ -46,7 +46,7 @@ function Content() {
     <div className="space-y-6">
       <PageHeader
         title="Rate details"
-        description="GET /api/v1/exchange/rate/details — full record including audit metadata for the latest date."
+        description="Full rate metadata including audit lineage for dashboard investigations."
       />
       <Card>
         <CardHeader>

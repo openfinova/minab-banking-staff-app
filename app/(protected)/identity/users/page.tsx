@@ -36,6 +36,7 @@ import { usersApi, type UserSearchCriteria } from "@/lib/api/modules/users";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
+import { CustomerQuickLookup } from "@/components/customers/customer-quick-lookup";
 
 export default function UsersPage() {
   return (
@@ -45,15 +46,11 @@ export default function UsersPage() {
   );
 }
 
-const CUSTOMER_PARTY_UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function UsersList() {
   const router = useRouter();
   const { toast } = useToast();
   const [criteria, setCriteria] = React.useState<UserSearchCriteria>({});
   const [draft, setDraft] = React.useState<UserSearchCriteria>({});
-  const [customerPartyId, setCustomerPartyId] = React.useState("");
   const [page, setPage] = React.useState(0);
   const size = 20;
 
@@ -149,42 +146,28 @@ function UsersList() {
               <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
             </Button>
           </div>
-          <div className="flex flex-wrap items-end gap-2 border-t pt-4">
-            <Field label="Open by customer party ID">
-              <Input
-                className="font-mono md:w-[360px]"
-                value={customerPartyId}
-                onChange={(e) => setCustomerPartyId(e.target.value)}
-                placeholder="Customer party UUID"
+          <div className="space-y-3 border-t pt-4">
+            <Field label="Open customer-linked user">
+              <p className="mb-2 text-xs text-muted-foreground">
+                Search customers by number, name, or contact details; opens the identity login linked to that party.
+              </p>
+              <CustomerQuickLookup
+                onPickCustomer={async (c) => {
+                  try {
+                    const user = await usersApi.getByCustomerPartyId(c.id);
+                    router.push(`/identity/users/${user.id}`);
+                  } catch (error) {
+                    toast({
+                      variant: "destructive",
+                      title: "Could not open user",
+                      description: describeApiError(error),
+                    });
+                  }
+                }}
+                actionLabel="Open linked user"
+                helperText="Requires customer read access and an identity user linked to the selected party."
               />
             </Field>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={async () => {
-                const id = customerPartyId.trim();
-                if (!CUSTOMER_PARTY_UUID_RE.test(id)) {
-                  toast({
-                    variant: "destructive",
-                    title: "Invalid customer party ID",
-                    description: "Enter a valid UUID.",
-                  });
-                  return;
-                }
-                try {
-                  const user = await usersApi.getByCustomerPartyId(id);
-                  router.push(`/identity/users/${user.id}`);
-                } catch (error) {
-                  toast({
-                    variant: "destructive",
-                    title: "User not found",
-                    description: describeApiError(error),
-                  });
-                }
-              }}
-            >
-              Open user
-            </Button>
           </div>
         </CardContent>
       </Card>

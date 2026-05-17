@@ -34,7 +34,6 @@ import { StatusBadge } from "@/components/data/status-badge";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { fiscalPeriodsApi, type FiscalPeriod } from "@/lib/api/modules/operations";
 import {
   createFiscalPeriodSchema,
@@ -54,7 +53,6 @@ export default function FiscalPeriodsPage() {
 
 function FiscalPeriodsContent() {
   const queryClient = useQueryClient();
-  const session = useAuthStore((s) => s.session);
   const { toast } = useToast();
   const list = useQuery({ queryKey: ["fiscal-periods"], queryFn: fiscalPeriodsApi.list });
   const [pending, setPending] = React.useState<{
@@ -62,25 +60,11 @@ function FiscalPeriodsContent() {
     kind: "close" | "reopen";
   } | null>(null);
 
-  const actorId =
-    session?.user.username?.trim() ||
-    session?.user.email?.trim() ||
-    session?.user.subject?.trim() ||
-    "";
-
   const onAction = async (reason: string) => {
     if (!pending) return;
     const { period, kind } = pending;
     const trimmedReason = reason.trim();
 
-    if (!actorId) {
-      toast({
-        variant: "destructive",
-        title: "Missing user identity",
-        description: "Sign in again, or ensure your username is available for audit (closedBy / reopenedBy).",
-      });
-      return;
-    }
     if (!trimmedReason) {
       toast({
         variant: "destructive",
@@ -100,13 +84,13 @@ function FiscalPeriodsContent() {
 
     try {
       if (kind === "close") {
-        await fiscalPeriodsApi.close(period.id, { closedBy: actorId, reason: trimmedReason });
+        await fiscalPeriodsApi.close(period.id, { reason: trimmedReason });
         toast({
           title: "Period closed",
           description: `${period.name}: status will show CLOSED and posting is BLOCKED.`,
         });
       } else {
-        await fiscalPeriodsApi.reopen(period.id, { reopenedBy: actorId, reason: trimmedReason });
+        await fiscalPeriodsApi.reopen(period.id, { reason: trimmedReason });
         toast({
           title: "Period reopened",
           description: `${period.name} is OPEN again for postings within its dates.`,

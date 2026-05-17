@@ -145,14 +145,14 @@ function AccountStatementsContent() {
 
       <PageHeader
         title="Statements"
-        description={`Generate statements over arbitrary ranges or pick an available month — /api/v1/accounts/${id}/statements`}
+        description={`Create customer statements for custom ranges, monthly cycles, or archived posting periods.`}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Custom range</CardTitle>
-            <CardDescription>GET /statements?fromDate=&toDate=</CardDescription>
+            <CardDescription>Build PDF/print data for any from–to window you select.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid gap-1.5">
@@ -176,7 +176,7 @@ function AccountStatementsContent() {
         <Card>
           <CardHeader>
             <CardTitle>Monthly statement</CardTitle>
-            <CardDescription>GET /statements/monthly?year=&month=</CardDescription>
+            <CardDescription>Pick a calendar month that already has bookings.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid gap-1.5">
@@ -218,7 +218,7 @@ function AccountStatementsContent() {
       <Card>
         <CardHeader>
           <CardTitle>Available periods</CardTitle>
-          <CardDescription>GET /statements/periods — pick a row to generate.</CardDescription>
+          <CardDescription>Browse statement periods the core system already closed and render one.</CardDescription>
         </CardHeader>
         <CardContent>
           {periods.isLoading ? (

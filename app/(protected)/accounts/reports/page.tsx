@@ -107,7 +107,9 @@ function AccountsReportsContent() {
       <Card>
         <CardHeader>
           <CardTitle>By product type</CardTitle>
-          <CardDescription>GET /api/v1/accounts/type/{"{"}productType{"}"}</CardDescription>
+          <CardDescription>
+            Browse every open account for the selected product category (read-only portfolio view).
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
@@ -137,7 +139,9 @@ function AccountsReportsContent() {
       <Card>
         <CardHeader>
           <CardTitle>By status</CardTitle>
-          <CardDescription>GET /api/v1/accounts/status/{"{"}status{"}"}</CardDescription>
+          <CardDescription>
+            Browse accounts sharing the same servicing status — useful for operational clean-up.
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">

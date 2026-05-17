@@ -40,7 +40,7 @@ function Content() {
     <div className="space-y-6">
       <PageHeader
         title="Currency support"
-        description="GET /api/v1/exchange/currencies/{code}/supported — verify a code is configured."
+        description="Confirm whether a currency code is enabled for FX before you rely on rates or conversions."
       />
       <Card>
         <CardHeader>

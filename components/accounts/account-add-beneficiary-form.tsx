@@ -12,23 +12,17 @@ import { CustomerIdentityPicker } from "@/components/accounts/customer-identity-
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import { accountsApi } from "@/lib/api/modules/accounts";
-import { useAuthStore } from "@/lib/auth/auth-store";
 
 export function AccountAddBeneficiaryForm({ accountId }: { accountId: string }) {
   const router = useRouter();
   const qc = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
   const [benUserId, setBenUserId] = React.useState("");
   const [benPct, setBenPct] = React.useState("");
   const [benDesc, setBenDesc] = React.useState("");
   const [benBirth, setBenBirth] = React.useState("");
   const [benFrom, setBenFrom] = React.useState("");
   const [benUntil, setBenUntil] = React.useState("");
-  const [createdBy, setCreatedBy] = React.useState(username);
-  React.useEffect(() => {
-    setCreatedBy(username);
-  }, [username]);
 
   const addBen = useMutation({
     mutationFn: () =>
@@ -39,7 +33,6 @@ export function AccountAddBeneficiaryForm({ accountId }: { accountId: string }) 
         birthDate: benBirth || undefined,
         effectiveFrom: benFrom ? `${benFrom}T00:00:00` : undefined,
         effectiveUntil: benUntil ? `${benUntil}T00:00:00` : undefined,
-        createdBy: createdBy.trim() || username,
       }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["accounts", accountId, "relationships"] });
@@ -65,7 +58,7 @@ export function AccountAddBeneficiaryForm({ accountId }: { accountId: string }) 
       <CardHeader>
         <CardTitle>Add beneficiary</CardTitle>
         <CardDescription>
-          POST /api/v1/accounts/{"{"}id{"}"}/beneficiaries — allocation must sum to ≤ 100%.
+          Add a beneficiary — allocation across beneficiaries must total at most 100%.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -108,10 +101,6 @@ export function AccountAddBeneficiaryForm({ accountId }: { accountId: string }) 
             <Label htmlFor="ben-until">Effective until</Label>
             <DateInput id="ben-until" value={benUntil} onChange={setBenUntil} />
           </div>
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="ben-cb">Created by</Label>
-          <Input id="ben-cb" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
           <Button

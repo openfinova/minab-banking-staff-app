@@ -21,18 +21,34 @@ export interface GlApprovalQueueItem {
 }
 
 export interface GlApprovalLimits {
+  id?: string;
   approvalRole?: string;
-  maxAmount?: number;
+  makerLimit?: number;
+  approvalLimit?: number;
+  /** Server may treat this as remaining headroom for the day when exposed. */
   remainingDailyAmount?: number;
+  currency?: string;
+  requiredApprovals?: number;
+  isActive?: boolean;
 }
 
 export const glApprovalsApi = {
   myQueue: () => api.get<GlApprovalQueueItem[]>("/api/v1/gl/approvals/my-queue"),
   myActivity: () => api.get<GlApprovalQueueItem[]>("/api/v1/gl/approvals/my-activity"),
-  myLimits: () => api.get<GlApprovalLimits>("/api/v1/gl/approvals/my-limits"),
+  myLimits: () => api.get<GlApprovalLimits[]>("/api/v1/gl/approvals/my-limits"),
   canApprove: (transactionId: string) =>
     api.get<{ canApprove: boolean; reason?: string }>(
       `/api/v1/gl/approvals/${transactionId}/can-approve`,
+    ),
+  approve: (transactionId: string, body?: { comments?: string }) =>
+    api.post<{ posted: boolean; transactionId: string }>(
+      `/api/v1/gl/approvals/${encodeURIComponent(transactionId)}/approve`,
+      body ?? {},
+    ),
+  reject: (transactionId: string, body: { reason: string }) =>
+    api.post<{ rejected: boolean; transactionId: string }>(
+      `/api/v1/gl/approvals/${encodeURIComponent(transactionId)}/reject`,
+      body,
     ),
 };
 
@@ -80,25 +96,25 @@ export const fiscalPeriodsApi = {
   active: () => api.get<FiscalPeriod[]>("/api/v1/gl/fiscal-periods/active"),
   forDate: (date: string) =>
     api.get<FiscalPeriod>("/api/v1/gl/fiscal-periods/for-date", { query: { date } }),
-  postingAllowed: (date?: string) =>
-    api.get<{ allowed: boolean }>("/api/v1/gl/fiscal-periods/posting-allowed", {
-      query: { date },
+  postingAllowed: (postingDate: string) =>
+    api.get<{ postingDate?: string; allowed: boolean }>("/api/v1/gl/fiscal-periods/posting-allowed", {
+      query: { postingDate },
     }),
   create: (body: CreateFiscalPeriodRequest) =>
     api.post<FiscalPeriod>("/api/v1/gl/fiscal-periods", body),
-  /** Query params required by server: closedBy, reason */
-  close: (id: string, query: { closedBy: string; reason: string }) =>
+  /** Query param: reason */
+  close: (id: string, query: { reason: string }) =>
     api.post<FiscalPeriodCloseResult>(
       `/api/v1/gl/fiscal-periods/${encodeURIComponent(id)}/close`,
       undefined,
-      { query: { closedBy: query.closedBy, reason: query.reason } },
+      { query: { reason: query.reason } },
     ),
-  /** Query params required: reopenedBy; reason must be ≥ 10 chars (server-enforced). */
-  reopen: (id: string, query: { reopenedBy: string; reason: string }) =>
+  /** Query param: reason must be ≥ 10 chars (server-enforced). */
+  reopen: (id: string, query: { reason: string }) =>
     api.post<FiscalPeriod>(
       `/api/v1/gl/fiscal-periods/${encodeURIComponent(id)}/reopen`,
       undefined,
-      { query: { reopenedBy: query.reopenedBy, reason: query.reason } },
+      { query: { reason: query.reason } },
     ),
 };
 
@@ -133,27 +149,26 @@ export const glReportsApi = {
 
 /** Bootstrap & standard chart (uses StandardBankTemplateDefinition on server). */
 export const glSetupApi = {
-  initializeChartOfAccounts: (currency: string, createdBy: string) =>
+  initializeChartOfAccounts: (currency: string) =>
     api.post<{ currency: string; glAccountsCreated: number }>(
       "/api/v1/gl/setup/chart-of-accounts",
       undefined,
-      { query: { currency, createdBy } },
+      { query: { currency } },
     ),
-  initializeOperationalAccounts: (createdBy: string) =>
+  initializeOperationalAccounts: () =>
     api.post<{ operationalAccountsWired: number }>(
       "/api/v1/gl/setup/operational-accounts",
       undefined,
-      { query: { createdBy } },
     ),
-  initializeFiscalPeriods: (fiscalYear: number, createdBy: string) =>
+  initializeFiscalPeriods: (fiscalYear: number) =>
     api.post<{
       fiscalYear: number;
       fiscalPeriodsCreated: number;
       fiscalPeriodsAlreadyExisted: number;
     }>("/api/v1/gl/setup/fiscal-periods", undefined, {
-      query: { fiscalYear, createdBy },
+      query: { fiscalYear },
     }),
-  initializeAll: (body: { currency: string; fiscalYear: number; createdBy: string }) =>
+  initializeAll: (body: { currency: string; fiscalYear: number }) =>
     api.post<Record<string, unknown>>("/api/v1/gl/setup/initialize", body),
 };
 
@@ -236,11 +251,10 @@ export const glOperationalAccountsApi = {
     api.get<{ valid: boolean; missingTypes?: string[] }>(
       "/api/v1/gl/operational-accounts/validate",
     ),
-  wireStandardMappings: (createdBy: string) =>
+  wireStandardMappings: () =>
     api.post<{ message?: string; count?: number }>(
       "/api/v1/gl/operational-accounts/standard",
       undefined,
-      { query: { createdBy } },
     ),
 };
 
@@ -280,12 +294,16 @@ export const glTransactionsApi = {
 
 export interface SuspenseItemRow {
   id: string;
+  glTransactionId?: string;
   transactionReference?: string;
   amount?: number | string;
   currency?: string;
   status?: string;
   reasonCode?: string;
+  description?: string;
   postingDate?: string;
+  ageDays?: number;
+  requiresAMLReview?: boolean;
 }
 
 export const glSuspenseApi = {
@@ -296,6 +314,8 @@ export const glSuspenseApi = {
         { page: opts.page ?? 0, size: opts.size ?? 25, sort: opts.sort },
       ),
     }),
+  /** Items flagged for AML / CFT review on the GL suspense rail. */
+  amlReview: () => api.get<SuspenseItemRow[]>("/api/v1/gl/suspense/aml-review"),
 };
 
 export interface GlRevaluationRun {

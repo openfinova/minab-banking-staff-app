@@ -83,7 +83,7 @@ function NewLoanProductContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="New loan product" description="POST /api/v1/loan-products" />
+      <PageHeader title="New loan product" description="Define pricing, tenor, repayment, and amortization defaults." />
 
       <Card>
         <CardHeader>

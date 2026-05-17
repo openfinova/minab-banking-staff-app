@@ -36,12 +36,12 @@ function PermissionCatalogContent() {
     <div className="space-y-6">
       <PageHeader
         title="Permission catalogue"
-        description="GET /api/v1/identity/roles/permissions — all BankingPermission values available for role assignment."
+        description="Authoritative catalogue of BankingPermission literals you can attach to roles."
       />
       <Card>
         <CardHeader>
           <CardTitle>Catalogue</CardTitle>
-          <CardDescription>Enum name and JWT authority string for each permission.</CardDescription>
+          <CardDescription>Enum name, JWT authority, and operator-facing description.</CardDescription>
         </CardHeader>
         <CardContent>
           {q.isLoading ? (
@@ -55,6 +55,7 @@ function PermissionCatalogContent() {
                   <TableRow>
                     <TableHead>Name</TableHead>
                     <TableHead>Authority</TableHead>
+                    <TableHead>Description</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -62,6 +63,9 @@ function PermissionCatalogContent() {
                     <TableRow key={row.name}>
                       <TableCell className="font-mono text-xs">{row.name}</TableCell>
                       <TableCell className="font-mono text-xs">{row.authority ?? "—"}</TableCell>
+                      <TableCell className="max-w-md text-sm text-muted-foreground">
+                        {row.description ?? "—"}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

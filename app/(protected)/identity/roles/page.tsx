@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,7 +94,7 @@ function RolesContent() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
-                  <TableHead>Permissions</TableHead>
+                  <TableHead className="max-w-[280px]">Permissions</TableHead>
                   <TableHead>System</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -112,8 +112,20 @@ function RolesContent() {
                       <p className="text-xs text-muted-foreground">{role.name}</p>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{role.description ?? "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant="muted">{role.permissionCount ?? "-"}</Badge>
+                    <TableCell className="max-w-[280px]">
+                      {role.permissions?.length ? (
+                        <span
+                          className="text-xs text-muted-foreground"
+                          title={[...role.permissions].sort().join(", ")}
+                        >
+                          {[...role.permissions].sort().slice(0, 4).join(", ")}
+                          {role.permissions.length > 4
+                            ? ` +${role.permissions.length - 4} more`
+                            : ""}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {role.systemRole ? (
@@ -125,11 +137,16 @@ function RolesContent() {
                     <TableCell className="text-right">
                       <Can permissions={[Permissions.AdminRolesWrite]}>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="icon"
                           aria-label="Delete role"
                           disabled={role.systemRole}
-                          onClick={() => setDeleteId(role.id)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setDeleteId(role.id);
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -152,7 +169,10 @@ function RolesContent() {
         description="Users currently assigned to this role will lose its associated permissions."
         confirmLabel="Delete role"
         destructive
-        onConfirm={onDelete}
+        omitReasonField
+        onConfirm={async () => {
+          await onDelete();
+        }}
       />
     </div>
   );
@@ -233,7 +253,17 @@ function CreateRoleDialog({ onCreated }: { onCreated: () => void }) {
             {permissionsQuery.isLoading ? (
               <Skeleton className="h-32 w-full" />
             ) : (
-              <div className="grid max-h-72 gap-1 overflow-auto rounded-md border p-2 scrollbar-thin md:grid-cols-2">
+              <>
+                <SelectAllPermissionsRow
+                  catalogValues={
+                    permissionsQuery.data?.map((perm) => perm.authority ?? perm.name) ?? []
+                  }
+                  selected={selected}
+                  onChangeAll={(next) =>
+                    form.setValue("permissions", next, { shouldDirty: true })
+                  }
+                />
+                <div className="grid max-h-72 gap-1 overflow-auto rounded-md border p-2 scrollbar-thin md:grid-cols-2">
                 {permissionsQuery.data?.map((perm) => {
                   const value = perm.authority ?? perm.name;
                   const checked = selected.includes(value);
@@ -258,6 +288,7 @@ function CreateRoleDialog({ onCreated }: { onCreated: () => void }) {
                   );
                 })}
               </div>
+              </>
             )}
           </div>
           <DialogFooter>
@@ -271,5 +302,35 @@ function CreateRoleDialog({ onCreated }: { onCreated: () => void }) {
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function SelectAllPermissionsRow({
+  catalogValues,
+  selected,
+  onChangeAll,
+}: {
+  catalogValues: string[];
+  selected: string[];
+  onChangeAll: (next: string[]) => void;
+}) {
+  const allSelected =
+    catalogValues.length > 0 && catalogValues.every((v) => selected.includes(v));
+  return (
+    <div className="mb-2 flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
+      <label className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+        <input
+          type="checkbox"
+          checked={allSelected}
+          onChange={(e) =>
+            onChangeAll(e.target.checked ? [...catalogValues] : [])
+          }
+        />
+        Select all
+      </label>
+      <span className="text-xs text-muted-foreground">
+        ({catalogValues.length} in catalogue)
+      </span>
+    </div>
   );
 }

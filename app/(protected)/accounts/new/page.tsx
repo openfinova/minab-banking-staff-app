@@ -24,7 +24,6 @@ import {
   ACCOUNT_NUMBER_REGEX,
   type AccountProductType,
 } from "@/lib/api/modules/accounts";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
 
 const PRODUCT_TYPES: AccountProductType[] = [
@@ -47,17 +46,11 @@ export default function NewAccountPage() {
 function NewAccountContent() {
   const router = useRouter();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
 
   const [primaryUserProfileId, setPrimaryUserProfileId] = React.useState("");
   const [productType, setProductType] = React.useState<AccountProductType>("CHECKING");
   const [currency, setCurrency] = React.useState("USD");
   const [accountNumber, setAccountNumber] = React.useState("");
-  const [createdBy, setCreatedBy] = React.useState(username);
-
-  React.useEffect(() => {
-    setCreatedBy(username);
-  }, [username]);
 
   const normalizedAccountNumber = accountNumber.trim().toUpperCase();
   const accountNumberValid = ACCOUNT_NUMBER_REGEX.test(normalizedAccountNumber);
@@ -73,7 +66,6 @@ function NewAccountContent() {
         productType,
         currency: currency.trim().toUpperCase(),
         accountNumber: normalizedAccountNumber,
-        createdBy: createdBy.trim() || username,
       }),
     onSuccess: (a) => {
       toast({ title: "Account created", description: a.accountNumber });
@@ -91,7 +83,7 @@ function NewAccountContent() {
     <div className="space-y-6">
       <PageHeader
         title="New account"
-        description="Create an account for a customer’s primary digital-banking user — POST /api/v1/accounts (account:write). Uses the customer’s linkedIdentityUserId."
+        description="Open a deposit or loan account for the customer's primary digital-banking user — needs account:write."
       />
 
       <Card className="max-w-xl">
@@ -152,10 +144,6 @@ function NewAccountContent() {
             {accountNumberError ? (
               <p className="text-xs text-destructive">{accountNumberError}</p>
             ) : null}
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="cb">Created by</Label>
-            <Input id="cb" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
           </div>
           <Button
             type="button"

@@ -170,7 +170,7 @@ function AccountBalanceContent() {
 
       <PageHeader
         title="Balance"
-        description={`GET /api/v1/accounts/${id}/balance and /balance/available`}
+        description={`Understand ledger versus available balances, projections, history, and GL consistency for this account.`}
       />
 
       <div className="flex flex-wrap gap-2">
@@ -226,8 +226,8 @@ function AccountBalanceContent() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Available (endpoint)</CardTitle>
-            <CardDescription>Quick read excluding holds — /balance/available.</CardDescription>
+            <CardTitle>Available balance</CardTitle>
+            <CardDescription>Fast view of funds available after holds and reservations.</CardDescription>
           </CardHeader>
           <CardContent>
             {available.isLoading ? (
@@ -274,7 +274,7 @@ function AccountBalanceContent() {
       <Card>
         <CardHeader>
           <CardTitle>Balance as of date</CardTitle>
-          <CardDescription>GET /balance/as-of?asOfDate=…</CardDescription>
+          <CardDescription>Point-in-time balance as of any business date you choose.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1.5">
@@ -301,7 +301,7 @@ function AccountBalanceContent() {
       <Card>
         <CardHeader>
           <CardTitle>Balance history</CardTitle>
-          <CardDescription>GET /balance/history?startDate=&amp;endDate=</CardDescription>
+          <CardDescription>Daily postings between two dates.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-end gap-3">
@@ -354,7 +354,7 @@ function AccountBalanceContent() {
         <CardHeader>
           <CardTitle>Trend analysis</CardTitle>
           <CardDescription>
-            GET /balance/trends?days=… — summary statistics over a rolling window.
+            Rolling averages, volatility, highs, and lows for quick monitoring.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

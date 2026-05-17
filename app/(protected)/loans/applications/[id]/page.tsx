@@ -160,7 +160,7 @@ function DetailContent() {
       <Card>
         <CardHeader>
           <CardTitle>Actions</CardTitle>
-          <CardDescription>Authority-aware controls mirror backend @PreAuthorize.</CardDescription>
+          <CardDescription>Buttons follow your loan permissions — only actions you may perform stay available.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-6 md:grid-cols-2">
           <Can permissions={[Permissions.LoanWrite]}>

@@ -39,7 +39,7 @@ function SearchContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Match products" description="GET /api/v1/loan-products/search" />
+      <PageHeader title="Match products" description="Find the best-fit products for amount, tenor, and customer risk." />
 
       <Card>
         <CardHeader>

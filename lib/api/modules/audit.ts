@@ -32,6 +32,7 @@ export interface AuditQuery {
 }
 
 export const auditApi = {
+  eventTypes: () => api.get<string[]>("/api/v1/identity/audit/event-types"),
   search: (query: AuditQuery, page?: PageRequest) =>
     api.get<PageResponse<AuditEvent>>("/api/v1/identity/audit/events", {
       query: {

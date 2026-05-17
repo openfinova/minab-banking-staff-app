@@ -42,11 +42,11 @@ function JournalContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Journal lines by GL account" description="GET /api/v1/gl/journal-entries/account/{accountId}" />
+      <PageHeader title="Journal lines by GL account" description="Drill into posted lines for any chart account." />
       <Card>
         <CardHeader>
           <CardTitle>Account ID</CardTitle>
-          <CardDescription>Paste any posted account UUID from the chart screen or API payloads.</CardDescription>
+          <CardDescription>Paste a GL account UUID from the chart explorer or supporting documents.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
           <div className="flex flex-wrap gap-2">

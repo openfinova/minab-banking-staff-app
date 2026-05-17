@@ -91,7 +91,7 @@ function Content() {
               quote.mutate();
             }}
           >
-            POST quote
+            Get payoff quote
           </Button>
         </CardContent>
       </Card>

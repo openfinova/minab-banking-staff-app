@@ -53,7 +53,7 @@ function Content() {
     <div className="space-y-6">
       <PageHeader
         title="Currency conversion"
-        description="POST /api/v1/exchange/convert — amount in one currency using the rate for the chosen date (or today if omitted)."
+        description="FX calculator — uses the stored mid rate for the chosen day (today if blank)."
       />
       <Card>
         <CardHeader>

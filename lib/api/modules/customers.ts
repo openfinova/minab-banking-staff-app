@@ -313,10 +313,8 @@ export const customersApi = {
   update: (id: string, body: UpdateCustomerBody) =>
     api.put<CustomerResponse>(customerPath(id), body),
 
-  updateProfile: (id: string, body: CustomerProfileUpdate, updatedBy: string) =>
-    api.put<CustomerResponse>(`${customerPath(id)}/profile`, body, {
-      query: { updatedBy },
-    }),
+  updateProfile: (id: string, body: CustomerProfileUpdate) =>
+    api.put<CustomerResponse>(`${customerPath(id)}/profile`, body),
 
   updateStatus: (id: string, status: CustomerStatus) =>
     request<void>(`${customerPath(id)}/status`, { method: "PUT", query: { status } }),
@@ -325,7 +323,35 @@ export const customersApi = {
     api.patch<CustomerResponse>(`${customerPath(id)}/compliance-flags`, body),
 
   delete: (id: string) => request<void>(customerPath(id), { method: "DELETE" }),
+
+  /** Compliance / servicing — immutable change log (may mask PII). */
+  listAuditEvents: (
+    customerId: string,
+    opts: { page?: number; size?: number } = {},
+  ) =>
+    api.get<PageResponse<CustomerAuditEvent>>(`${customerPath(customerId)}/audit-events`, {
+      query: withPaging(
+        {},
+        { page: opts.page ?? 0, size: opts.size ?? 25, sort: "changedAt,desc" },
+      ),
+    }),
 };
+
+/** Mirrors server `CustomerAuditEventResponse`. */
+export interface CustomerAuditEvent {
+  id: string;
+  action?: string;
+  fieldName?: string;
+  oldValue?: string;
+  newValue?: string;
+  changedBy?: string;
+  channel?: string;
+  changedAt?: string;
+  correlationId?: string;
+  relatedEntityId?: string;
+  relatedEntityType?: string;
+  valueMasked?: boolean;
+}
 
 export const customerDocumentsApi = {
   list: (customerId: string) =>
@@ -435,45 +461,34 @@ export const customerRelationshipsApi = {
 
   create: (
     customerId: string,
-    query: { relatedCustomerId: string; relationshipType: CustomerRelationshipType; createdBy: string },
+    query: { relatedCustomerId: string; relationshipType: CustomerRelationshipType },
   ) =>
     api.post<CustomerRelationship>(`${customerPath(customerId)}/relationships`, undefined, {
       query: {
         relatedCustomerId: query.relatedCustomerId,
         relationshipType: query.relationshipType,
-        createdBy: query.createdBy,
       },
     }),
 
-  remove: (customerId: string, relationshipId: string, removedBy: string) =>
+  remove: (customerId: string, relationshipId: string) =>
     request<void>(
       `${customerPath(customerId)}/relationships/${encodeURIComponent(relationshipId)}`,
-      { method: "DELETE", query: { removedBy } },
+      { method: "DELETE" },
     ),
 };
 
 export const customerKycApi = {
-  initiate: (customerId: string, initiatedBy: string) =>
-    api.post<KYCWorkflow>(
-      `${customerPath(customerId)}/kyc/initiate`,
-      undefined,
-      { query: { initiatedBy } },
-    ),
+  initiate: (customerId: string) =>
+    api.post<KYCWorkflow>(`${customerPath(customerId)}/kyc/initiate`, undefined),
 
-  submitDocuments: (customerId: string, documents: KYCDocumentSubmission[], submittedBy: string) =>
-    api.post<KYCWorkflow>(`${customerPath(customerId)}/kyc/documents`, documents, {
-      query: { submittedBy },
-    }),
+  submitDocuments: (customerId: string, documents: KYCDocumentSubmission[]) =>
+    api.post<KYCWorkflow>(`${customerPath(customerId)}/kyc/documents`, documents),
 
-  review: (
-    customerId: string,
-    query: { decision: KYCDecision; comments: string; reviewedBy: string },
-  ) =>
+  review: (customerId: string, query: { decision: KYCDecision; comments: string }) =>
     api.post<KYCWorkflow>(`${customerPath(customerId)}/kyc/review`, undefined, {
       query: {
         decision: query.decision,
         comments: query.comments,
-        reviewedBy: query.reviewedBy,
       },
     }),
 
@@ -483,10 +498,10 @@ export const customerKycApi = {
   history: (customerId: string) =>
     api.get<KYCWorkflow[]>(`${customerPath(customerId)}/kyc/history`),
 
-  requestReVerification: (customerId: string, reason: string, requestedBy: string) =>
+  requestReVerification: (customerId: string, reason: string) =>
     api.post<KYCWorkflow>(
       `${customerPath(customerId)}/kyc/re-verification`,
       undefined,
-      { query: { reason, requestedBy } },
+      { query: { reason } },
     ),
 };

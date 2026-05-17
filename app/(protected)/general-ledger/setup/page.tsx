@@ -1,17 +1,22 @@
 "use client";
 
 import * as React from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
 import { RouteGuard } from "@/components/rbac/route-guard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import { glSetupApi } from "@/lib/api/modules/operations";
-import { useAuthStore } from "@/lib/auth/auth-store";
+import {
+  GL_BOOTSTRAP_COMPLETE_QUERY_ROOT,
+  useGlBootstrapComplete,
+} from "@/lib/general-ledger/use-gl-bootstrap-complete";
 import { Permissions } from "@/lib/rbac/permissions";
 import Link from "next/link";
 
@@ -23,54 +28,85 @@ export default function GlSetupPage() {
   );
 }
 
+function invalidateBootstrapStatus(qc: ReturnType<typeof useQueryClient>) {
+  void qc.invalidateQueries({ queryKey: [GL_BOOTSTRAP_COMPLETE_QUERY_ROOT] });
+}
+
 function GlSetupContent() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
   const [currency, setCurrency] = React.useState("USD");
   const [fiscalYear, setFiscalYear] = React.useState(new Date().getFullYear());
-  const [createdBy, setCreatedBy] = React.useState(username);
 
-  React.useEffect(() => setCreatedBy(username), [username]);
+  const bootstrap = useGlBootstrapComplete(true);
+
+  React.useEffect(() => {
+    if (bootstrap.isSuccess && bootstrap.data.complete) {
+      router.replace("/general-ledger");
+    }
+  }, [bootstrap.isSuccess, bootstrap.data?.complete, router, bootstrap.data]);
 
   const full = useMutation({
     mutationFn: () =>
       glSetupApi.initializeAll({
         currency: currency.trim().toUpperCase(),
         fiscalYear,
-        createdBy: createdBy.trim(),
       }),
-    onSuccess: (res) =>
+    onSuccess: (res) => {
+      invalidateBootstrapStatus(queryClient);
       toast({
         title: "GL bootstrap complete",
         description: JSON.stringify(res),
-      }),
+      });
+    },
     onError: (error) =>
       toast({ variant: "destructive", title: "Initialization failed", description: describeApiError(error) }),
   });
 
   const chartOnly = useMutation({
     mutationFn: () =>
-      glSetupApi.initializeChartOfAccounts(currency.trim().toUpperCase(), createdBy.trim()),
-    onSuccess: (r) => toast({ title: "Chart step", description: `${r.glAccountsCreated} accounts created.` }),
+      glSetupApi.initializeChartOfAccounts(currency.trim().toUpperCase()),
+    onSuccess: (r) => {
+      invalidateBootstrapStatus(queryClient);
+      toast({ title: "Chart step", description: `${r.glAccountsCreated} accounts created.` });
+    },
     onError: (e) => toast({ variant: "destructive", description: describeApiError(e) }),
   });
 
   const opOnly = useMutation({
-    mutationFn: () => glSetupApi.initializeOperationalAccounts(createdBy.trim()),
-    onSuccess: (r) =>
-      toast({ title: "Operational step", description: `${r.operationalAccountsWired} mappings wired.` }),
+    mutationFn: () => glSetupApi.initializeOperationalAccounts(),
+    onSuccess: (r) => {
+      invalidateBootstrapStatus(queryClient);
+      toast({ title: "Operational step", description: `${r.operationalAccountsWired} mappings wired.` });
+    },
     onError: (e) => toast({ variant: "destructive", description: describeApiError(e) }),
   });
 
   const periodsOnly = useMutation({
-    mutationFn: () => glSetupApi.initializeFiscalPeriods(fiscalYear, createdBy.trim()),
-    onSuccess: (r) =>
+    mutationFn: () => glSetupApi.initializeFiscalPeriods(fiscalYear),
+    onSuccess: (r) => {
+      invalidateBootstrapStatus(queryClient);
       toast({
         title: "Fiscal periods",
         description: `Created ${r.fiscalPeriodsCreated}, skipped ${r.fiscalPeriodsAlreadyExisted}.`,
-      }),
+      });
+    },
     onError: (e) => toast({ variant: "destructive", description: describeApiError(e) }),
   });
+
+  if (bootstrap.isPending) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="GL system setup" description="Loading status…" />
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </div>
+    );
+  }
+
+  if (bootstrap.isSuccess && bootstrap.data.complete) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">
@@ -82,7 +118,7 @@ function GlSetupContent() {
       <Card>
         <CardHeader>
           <CardTitle>Parameters</CardTitle>
-          <CardDescription>Shared across POST /api/v1/gl/setup/* endpoints.</CardDescription>
+          <CardDescription>Used for every bootstrap action on this page.</CardDescription>
         </CardHeader>
         <CardContent className="grid max-w-lg gap-4">
           <div className="space-y-1.5">
@@ -93,10 +129,6 @@ function GlSetupContent() {
             <Label className="text-xs uppercase text-muted-foreground">Fiscal year</Label>
             <Input type="number" value={fiscalYear} onChange={(e) => setFiscalYear(Number(e.target.value))} />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs uppercase text-muted-foreground">Created by</Label>
-            <Input value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
-          </div>
         </CardContent>
       </Card>
 
@@ -104,7 +136,7 @@ function GlSetupContent() {
         <CardHeader>
           <CardTitle>Run setup</CardTitle>
           <CardDescription>
-            <code className="text-xs">POST /initialize</code> executes chart → operational mappings → twelve monthly fiscal periods idempotently.
+            Full initialization applies chart seeding, operational wiring, and monthly fiscal calendars — safe to repeat.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">

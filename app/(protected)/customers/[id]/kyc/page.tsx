@@ -37,7 +37,6 @@ import {
   type DocumentType,
   type KYCDecision,
 } from "@/lib/api/modules/customers";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
 
 const DOC_TYPES: DocumentType[] = [
@@ -63,23 +62,13 @@ function CustomerKycContent() {
   const customerId = typeof params?.id === "string" ? params.id : "";
   const qc = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
 
   const [docType, setDocType] = React.useState<DocumentType>("PASSPORT");
   const [docNumber, setDocNumber] = React.useState("");
   const [issuingCountry, setIssuingCountry] = React.useState("");
-  const [submittedBy, setSubmittedBy] = React.useState(username);
   const [reviewDecision, setReviewDecision] = React.useState<KYCDecision>("APPROVED");
   const [reviewComments, setReviewComments] = React.useState("");
-  const [reviewedBy, setReviewedBy] = React.useState(username);
   const [reverifyReason, setReverifyReason] = React.useState("");
-  const [requestedBy, setRequestedBy] = React.useState(username);
-
-  React.useEffect(() => {
-    setSubmittedBy(username);
-    setReviewedBy(username);
-    setRequestedBy(username);
-  }, [username]);
 
   const workflow = useQuery({
     queryKey: ["customers", customerId, "kyc", "workflow"],
@@ -95,7 +84,7 @@ function CustomerKycContent() {
   });
 
   const initiate = useMutation({
-    mutationFn: (initiatedBy: string) => customerKycApi.initiate(customerId, initiatedBy),
+    mutationFn: () => customerKycApi.initiate(customerId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers", customerId, "kyc"] });
       toast({ title: "KYC initiated" });
@@ -106,17 +95,13 @@ function CustomerKycContent() {
 
   const submitDocs = useMutation({
     mutationFn: () =>
-      customerKycApi.submitDocuments(
-        customerId,
-        [
+      customerKycApi.submitDocuments(customerId, [
           {
             documentType: docType,
             documentNumber: docNumber.trim(),
             issuingCountry: issuingCountry.trim().toUpperCase(),
           },
-        ],
-        submittedBy.trim() || username,
-      ),
+        ]),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers", customerId, "kyc"] });
       toast({ title: "Documents submitted" });
@@ -130,7 +115,6 @@ function CustomerKycContent() {
       customerKycApi.review(customerId, {
         decision: reviewDecision,
         comments: reviewComments,
-        reviewedBy: reviewedBy.trim() || username,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers", customerId, "kyc"] });
@@ -143,11 +127,7 @@ function CustomerKycContent() {
 
   const reverify = useMutation({
     mutationFn: () =>
-      customerKycApi.requestReVerification(
-        customerId,
-        reverifyReason.trim(),
-        requestedBy.trim() || username,
-      ),
+      customerKycApi.requestReVerification(customerId, reverifyReason.trim()),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers", customerId, "kyc"] });
       toast({ title: "Re-verification requested" });
@@ -176,7 +156,7 @@ function CustomerKycContent() {
             <Button variant="outline" size="sm" asChild>
               <Link href={`/customers/${customerId}`}>Back to customer</Link>
             </Button>
-            <span className="text-muted-foreground">{`/api/v1/customers/{id}/kyc/*`}</span>
+            <span className="text-muted-foreground text-sm">Due diligence steps, evidence, reviews, and audit history.</span>
           </span>
         }
       />
@@ -184,7 +164,7 @@ function CustomerKycContent() {
       <Card>
         <CardHeader>
           <CardTitle>Current workflow</CardTitle>
-          <CardDescription>GET /kyc/workflow</CardDescription>
+          <CardDescription>Current state, reviewer narrative, and blocker reasons.</CardDescription>
         </CardHeader>
         <CardContent>
           {workflow.isLoading ? (
@@ -225,7 +205,7 @@ function CustomerKycContent() {
                 type="button"
                 variant="secondary"
                 disabled={initiate.isPending}
-                onClick={() => initiate.mutate(username)}
+                onClick={() => initiate.mutate()}
               >
                 Initiate KYC
               </Button>
@@ -264,10 +244,6 @@ function CustomerKycContent() {
                     placeholder="e.g. US"
                   />
                 </div>
-                <div className="grid gap-2 sm:col-span-2">
-                  <Label htmlFor="sb">Submitted by</Label>
-                  <Input id="sb" value={submittedBy} onChange={(e) => setSubmittedBy(e.target.value)} />
-                </div>
               </div>
               <Button
                 type="button"
@@ -305,10 +281,6 @@ function CustomerKycContent() {
                   <Label htmlFor="rc">Comments</Label>
                   <Textarea id="rc" value={reviewComments} onChange={(e) => setReviewComments(e.target.value)} />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="rb">Reviewed by</Label>
-                  <Input id="rb" value={reviewedBy} onChange={(e) => setReviewedBy(e.target.value)} />
-                </div>
               </div>
               <Button type="button" disabled={review.isPending} onClick={() => review.mutate()}>
                 Submit review
@@ -321,10 +293,6 @@ function CustomerKycContent() {
                 <div className="grid gap-2">
                   <Label htmlFor="rr">Reason</Label>
                   <Textarea id="rr" value={reverifyReason} onChange={(e) => setReverifyReason(e.target.value)} />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="rqb">Requested by</Label>
-                  <Input id="rqb" value={requestedBy} onChange={(e) => setRequestedBy(e.target.value)} />
                 </div>
               </div>
               <Button
@@ -342,7 +310,7 @@ function CustomerKycContent() {
       <Card>
         <CardHeader>
           <CardTitle>History</CardTitle>
-          <CardDescription>GET /kyc/history</CardDescription>
+          <CardDescription>Chronological decisions, hand-offs, and rework cycles.</CardDescription>
         </CardHeader>
         <CardContent>
           {history.isLoading ? (

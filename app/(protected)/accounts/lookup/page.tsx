@@ -36,13 +36,13 @@ function AccountLookupContent() {
     <div className="space-y-6">
       <PageHeader
         title="Account lookup"
-        description="Resolve an account by UUID, domestic number, or IBAN — GET /api/v1/accounts/{id}, /number/{n}, /iban/{iban}."
+        description="Resolve an account from its UUID, domestic number, or IBAN before opening the profile."
       />
 
       <Card>
         <CardHeader>
           <CardTitle>Search</CardTitle>
-          <CardDescription>Each tab calls a dedicated read endpoint for operational tracing.</CardDescription>
+          <CardDescription>Each tab exercises a different resolver so support teams can match any identifier they hold.</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="id" className="w-full">

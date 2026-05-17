@@ -72,7 +72,7 @@ function Content() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Restructuring" description="/api/v1/loan-accounts/{id}/restructurings" />
+      <PageHeader title="Restructuring" description="Track concessions, tenor changes, or rescheduled schedules for this facility." />
       <LoanServicingLinks loanAccountId={id} />
 
       <Can permissions={[Permissions.LoanRestructure]}>

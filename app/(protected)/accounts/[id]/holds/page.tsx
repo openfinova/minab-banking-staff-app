@@ -155,13 +155,13 @@ function AccountHoldsContent() {
 
       <PageHeader
         title="Holds"
-        description={`Administrative fund holds — /api/v1/accounts/${id}/holds`}
+        description={`Place, release, or settle administrative holds on posted funds for this account.`}
       />
 
       <Card className="max-w-md">
         <CardHeader>
           <CardTitle>Total amount held</CardTitle>
-          <CardDescription>GET /api/v1/accounts/{"{"}id{"}"}/holds/total</CardDescription>
+          <CardDescription>See the rolled-up amount still under hold right now.</CardDescription>
         </CardHeader>
         <CardContent>
           {total.isLoading ? (
@@ -180,7 +180,7 @@ function AccountHoldsContent() {
         <Card className="max-w-xl">
           <CardHeader>
             <CardTitle>Place hold</CardTitle>
-            <CardDescription>POST with amount, currency, reason; expiry optional (local time).</CardDescription>
+            <CardDescription>Block funds with amount, currency, narrative, optional auto-expiry.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid gap-1.5">

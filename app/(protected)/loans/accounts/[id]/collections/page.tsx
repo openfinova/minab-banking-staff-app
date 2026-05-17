@@ -87,7 +87,6 @@ function Content() {
   const [notes, setNotes] = React.useState("");
   const [fup, setFup] = React.useState("");
   const [assign, setAssign] = React.useState("");
-  const [createdBy, setCreatedBy] = React.useState("collector");
 
   const create = useMutation({
     mutationFn: () =>
@@ -98,7 +97,6 @@ function Content() {
         notes,
         followUpDate: fup || undefined,
         assignedTo: assign || undefined,
-        createdBy,
       }),
     onSuccess: () => {
       toast({ title: "Activity created" });
@@ -169,7 +167,6 @@ function Content() {
             <Textarea placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
             <Input type="date" placeholder="Follow-up" value={fup} onChange={(e) => setFup(e.target.value)} />
             <Input placeholder="Assigned to" value={assign} onChange={(e) => setAssign(e.target.value)} />
-            <Input placeholder="Created by" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
             <Button
               disabled={create.isPending}
               onClick={() => {
@@ -240,13 +237,10 @@ function ActivityRow({
   const { toast } = useToast();
   const [upNotes, setUpNotes] = React.useState(a.notes ?? "");
   const [upFup, setUpFup] = React.useState("");
-  const [updBy, setUpdBy] = React.useState("staff");
   const [nst, setNst] = React.useState<CollectionStatus>("IN_PROGRESS");
   const [outcome, setOutcome] = React.useState("Resolved");
-  const [compBy, setCompBy] = React.useState("manager");
   const [sfDate, setSfDate] = React.useState("");
   const [sfType, setSfType] = React.useState<CollectionActivityType>("PHONE_CALL");
-  const [sfBy, setSfBy] = React.useState("staff");
 
   return (
     <div className="border rounded-md p-3 text-sm space-y-2">
@@ -258,13 +252,12 @@ function ActivityRow({
         <div className="flex flex-wrap gap-2">
           <Textarea className="min-h-[60px]" value={upNotes} onChange={(e) => setUpNotes(e.target.value)} />
           <Input type="date" className="w-36" value={upFup} onChange={(e) => setUpFup(e.target.value)} />
-          <Input className="w-24" value={updBy} onChange={(e) => setUpdBy(e.target.value)} />
           <Button
             size="sm"
             variant="outline"
             onClick={() =>
               loanCollectionsApi
-                .update(loanId, a.id, { notes: upNotes, followUpDate: upFup || undefined, updatedBy: updBy })
+                .update(loanId, a.id, { notes: upNotes, followUpDate: upFup || undefined })
                 .then(() => {
                   toast({ title: "Updated" });
                   onChange();
@@ -285,7 +278,7 @@ function ActivityRow({
             size="sm"
             onClick={() =>
               loanCollectionsApi
-                .updateStatus(loanId, a.id, { newStatus: nst, updatedBy: updBy })
+                .updateStatus(loanId, a.id, { newStatus: nst })
                 .then(() => {
                   toast({ title: "Status" });
                   onChange();
@@ -306,13 +299,12 @@ function ActivityRow({
               </option>
             ))}
           </select>
-          <Input className="h-8 w-24" value={sfBy} onChange={(e) => setSfBy(e.target.value)} />
           <Button
             size="sm"
             variant="secondary"
             onClick={() =>
               loanCollectionsApi
-                .scheduleFollowUp(loanId, a.id, { followUpDate: sfDate, followUpType: sfType, scheduledBy: sfBy })
+                .scheduleFollowUp(loanId, a.id, { followUpDate: sfDate, followUpType: sfType })
                 .then(() => {
                   toast({ title: "Scheduled" });
                   onChange();
@@ -327,13 +319,12 @@ function ActivityRow({
       <Can permissions={[Permissions.LoanCollectApprove]}>
         <div className="flex flex-wrap gap-2">
           <Input placeholder="Outcome" className="h-8 max-w-xs" value={outcome} onChange={(e) => setOutcome(e.target.value)} />
-          <Input className="h-8 w-28" value={compBy} onChange={(e) => setCompBy(e.target.value)} />
           <Button
             size="sm"
             variant="destructive"
             onClick={() =>
               loanCollectionsApi
-                .complete(loanId, a.id, { outcome, completedBy: compBy })
+                .complete(loanId, a.id, { outcome })
                 .then(() => {
                   toast({ title: "Completed" });
                   onChange();

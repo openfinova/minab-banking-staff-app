@@ -61,6 +61,8 @@ export interface UpdateUserAccessRequest {
 export interface UserSearchCriteria {
   /** Free text: identity user UUID, or partial match on username / email (server-defined). */
   q?: string;
+  /** Exact customer party UUID — finds the linked CUSTOMER login when present. */
+  customerPartyId?: string;
   username?: string;
   email?: string;
   userType?: UserType;

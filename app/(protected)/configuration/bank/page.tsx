@@ -31,7 +31,7 @@ function BankProfileContent() {
       <Card>
         <CardHeader>
           <CardTitle>{data?.name ?? "Bank"}</CardTitle>
-          <CardDescription>Source: `/api/v1/bank/details`.</CardDescription>
+          <CardDescription>Legal name and operating parameters from core configuration.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (

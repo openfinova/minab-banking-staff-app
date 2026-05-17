@@ -43,7 +43,7 @@ function SuspenseContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Suspense workspace" description="GET /api/v1/gl/suspense — searchable queue (read-only)." />
+      <PageHeader title="Suspense workspace" description="Searchable queue of items parked in suspense (read-only)." />
       <Card>
         <CardHeader>
           <CardTitle>Items</CardTitle>

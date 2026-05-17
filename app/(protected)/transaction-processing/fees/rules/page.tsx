@@ -75,7 +75,7 @@ function FeeRulesContent() {
     <div className="space-y-6">
       <PageHeader
         title="Fee rules"
-        description="GET/POST/PUT/DELETE /api/v1/fees/rules — mutations require admin:config:write."
+        description="Configure how fees compute at posting time — editing rules needs admin:config:write."
         actions={
           <Can permissions={[Permissions.AdminConfigWrite]}>
             <CreateRuleDialog

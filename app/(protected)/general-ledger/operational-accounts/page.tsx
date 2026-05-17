@@ -21,7 +21,6 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import { glOperationalAccountsApi } from "@/lib/api/modules/operations";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
 import { StatusBadge } from "@/components/data/status-badge";
 
@@ -36,7 +35,6 @@ export default function OperationalGlAccountsPage() {
 function OperationalContent() {
   const qc = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
 
   const configs = useQuery({
     queryKey: ["gl-operational-configs"],
@@ -49,7 +47,7 @@ function OperationalContent() {
   });
 
   const wireStandard = useMutation({
-    mutationFn: () => glOperationalAccountsApi.wireStandardMappings(username),
+    mutationFn: () => glOperationalAccountsApi.wireStandardMappings(),
     onSuccess: (body) => {
       qc.invalidateQueries({ queryKey: ["gl-operational-configs"] });
       qc.invalidateQueries({ queryKey: ["gl-operational-validate"] });
@@ -72,7 +70,7 @@ function OperationalContent() {
     <div className="space-y-6">
       <PageHeader
         title="Operational GL mappings"
-        description="Maps operational account types (vault cash, clearing, …) onto chart codes. Depends on GET /api/v1/gl/operational-accounts."
+        description="Map operational buckets (vault cash, clearing, …) to GL accounts so postings land on the right codes."
         actions={
           <div className="flex flex-wrap gap-2">
             <Can permissions={[Permissions.GlApprove]}>
@@ -91,7 +89,7 @@ function OperationalContent() {
         <CardHeader>
           <CardTitle>Validation snapshot</CardTitle>
           <CardDescription>
-            GET /api/v1/gl/operational-accounts/validate — quick pass/fail ahead of transactional posting.
+            Sanity-check mappings before high-volume posting — quick pass/fail.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -116,7 +114,7 @@ function OperationalContent() {
       <Card>
         <CardHeader>
           <CardTitle>Active configurations</CardTitle>
-          <CardDescription>GET /api/v1/gl/operational-accounts (list).</CardDescription>
+          <CardDescription>Review every operational type and its linked GL code.</CardDescription>
         </CardHeader>
         <CardContent>
           {configs.isLoading ? (
@@ -126,7 +124,7 @@ function OperationalContent() {
           ) : !configs.data?.length ? (
             <EmptyState
               title="No operational mappings yet"
-              description="Create the chart of accounts first, then wire mappings (setup endpoint or POST /api/v1/gl/operational-accounts/standard)."
+              description="Create the chart of accounts first, then apply the standard operational wiring from setup."
             />
           ) : (
             <Table>

@@ -64,7 +64,7 @@ function GlAuditContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="GL audit explorer" description="Read-only wrappers over GET /api/v1/gl/audit/*." />
+      <PageHeader title="GL audit explorer" description="Explore high-risk activity, reversals, and day-level audit slices (read-only)." />
 
       <Tabs defaultValue="recent">
         <TabsList>
@@ -77,7 +77,7 @@ function GlAuditContent() {
           <Card>
             <CardHeader>
               <CardTitle>Daily ledger</CardTitle>
-              <CardDescription>GET /api/v1/gl/audit/recent?date=</CardDescription>
+              <CardDescription>Snapshot of sensitive movements for a selected business date.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-end gap-2">
@@ -98,7 +98,7 @@ function GlAuditContent() {
           <Card>
             <CardHeader>
               <CardTitle>Reversals</CardTitle>
-              <CardDescription>GET /api/v1/gl/audit/reversals</CardDescription>
+              <CardDescription>Journal lines linked to reversal events.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-end gap-2">
@@ -117,7 +117,7 @@ function GlAuditContent() {
           <Card>
             <CardHeader>
               <CardTitle>High-risk actions</CardTitle>
-              <CardDescription>GET /api/v1/gl/audit/high-risk</CardDescription>
+              <CardDescription>Curated queue of materially sensitive postings.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-end gap-2">

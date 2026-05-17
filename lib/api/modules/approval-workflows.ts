@@ -39,6 +39,8 @@ export interface WorkflowActionRequest {
 }
 
 export const approvalWorkflowsApi = {
+  resourceTypes: () =>
+    api.get<string[]>("/api/v1/identity/approval-workflows/resource-types"),
   create: (body: CreateApprovalWorkflowRequest) =>
     api.post<ApprovalWorkflow>("/api/v1/identity/approval-workflows", body),
   get: (id: string) =>

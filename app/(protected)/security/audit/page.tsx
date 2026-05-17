@@ -9,6 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Pagination } from "@/components/data/pagination";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -51,6 +58,11 @@ function AuditContent() {
   const [page, setPage] = React.useState(0);
   const size = 25;
 
+  const eventTypesQuery = useQuery({
+    queryKey: ["audit", "event-types"],
+    queryFn: auditApi.eventTypes,
+  });
+
   const search = useQuery({
     queryKey: ["audit", query, page, size],
     queryFn: () => auditApi.search(query, { page, size, sort: "createdAt,desc" }),
@@ -75,11 +87,25 @@ function AuditContent() {
             onChange={setUserFilter}
           />
           <Field label="Event type">
-            <Input
-              value={draft.eventType ?? ""}
-              onChange={(e) => setDraft({ ...draft, eventType: e.target.value })}
-              placeholder="LOGIN_SUCCESS"
-            />
+            <Select
+              value={draft.eventType ?? "__ANY__"}
+              onValueChange={(v) =>
+                setDraft({ ...draft, eventType: v === "__ANY__" ? undefined : v })
+              }
+              disabled={eventTypesQuery.isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Any event type" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[min(24rem,70vh)]">
+                <SelectItem value="__ANY__">Any</SelectItem>
+                {(eventTypesQuery.data ?? []).map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </Field>
           <Field label="IP address">
             <Input

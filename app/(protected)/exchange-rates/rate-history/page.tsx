@@ -35,7 +35,6 @@ import {
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
-import { useAuth } from "@/lib/auth/auth-provider";
 
 export default function ExchangeRateHistoryPage() {
   return (
@@ -46,8 +45,6 @@ export default function ExchangeRateHistoryPage() {
 }
 
 function Content() {
-  const { session } = useAuth();
-  const operator = session?.user.username ?? "";
   const { toast } = useToast();
 
   const [histSource, setHistSource] = React.useState("USD");
@@ -102,10 +99,10 @@ function Content() {
   };
 
   const onSaveEdit = async () => {
-    if (!editRow || !editForm || !operator) return;
+    if (!editRow || !editForm) return;
     setSaving(true);
     try {
-      await exchangeApi.updateRate(editRow.id, { ...editForm, updatedBy: operator }, operator);
+      await exchangeApi.updateRate(editRow.id, { ...editForm });
       toast({ title: "Exchange rate updated" });
       setEditOpen(false);
       void loadHistory();
@@ -117,9 +114,9 @@ function Content() {
   };
 
   const onDelete = async () => {
-    if (!deleteRow || !operator) return;
+    if (!deleteRow) return;
     try {
-      await exchangeApi.deleteRate(deleteRow.id, operator);
+      await exchangeApi.deleteRate(deleteRow.id);
       toast({ title: "Exchange rate deleted" });
       setDeleteOpen(false);
       setDeleteRow(null);
@@ -133,7 +130,7 @@ function Content() {
     <div className="space-y-6">
       <PageHeader
         title="Rate history"
-        description="GET /api/v1/exchange/rates/history — list rows in a date range; update or delete by row id (admin)."
+        description="Maintain the rate table — inspect a window of publications; edit mistaken rows instead of deleting when possible."
       />
       <Card>
         <CardHeader>
@@ -320,7 +317,7 @@ function Content() {
             <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
               Cancel
             </Button>
-            <Button type="button" disabled={saving || !operator} onClick={onSaveEdit}>
+            <Button type="button" disabled={saving} onClick={onSaveEdit}>
               {saving ? "Saving…" : "Save"}
             </Button>
           </DialogFooter>
@@ -334,7 +331,7 @@ function Content() {
           if (!o) setDeleteRow(null);
         }}
         title="Delete exchange rate?"
-        description="Permanently removes the rate row (DELETE by id). Prefer editing unless the publication was erroneous."
+        description="Prefer correcting the row unless the publication was clearly wrong."
         confirmLabel="Delete"
         destructive
         onConfirm={async () => {

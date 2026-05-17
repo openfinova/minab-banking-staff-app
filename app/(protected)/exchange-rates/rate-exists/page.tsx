@@ -49,7 +49,7 @@ function Content() {
     <div className="space-y-6">
       <PageHeader
         title="Rate exists"
-        description="GET /api/v1/exchange/rates/exists — whether a row exists for the natural key (admin)."
+        description="Check whether treasury already published a row for a pair, date, and rate type before duplicating work."
       />
       <Card>
         <CardHeader>

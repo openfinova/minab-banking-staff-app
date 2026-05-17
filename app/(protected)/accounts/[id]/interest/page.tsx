@@ -153,13 +153,13 @@ function AccountInterestContent() {
 
       <PageHeader
         title="Interest"
-        description={`Configure rates, calculate accrual, and post interest — /api/v1/accounts/${id}/interest`}
+        description={`Manage credit and debit rates, run accrual estimates, and book interest for this account.`}
       />
 
       <Card>
         <CardHeader>
           <CardTitle>Current rate</CardTitle>
-          <CardDescription>GET /interest/rates/current?rateType=…</CardDescription>
+          <CardDescription>Shows the effective APR for the selected rate type.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1.5">
@@ -196,7 +196,7 @@ function AccountInterestContent() {
         <Card className="max-w-2xl">
           <CardHeader>
             <CardTitle>Set rate</CardTitle>
-            <CardDescription>POST /interest/rates — supersedes any earlier rate.</CardDescription>
+            <CardDescription>Introduce a new rate that supersedes older schedules from its effective timestamp.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">
@@ -261,7 +261,7 @@ function AccountInterestContent() {
       <Card>
         <CardHeader>
           <CardTitle>Calculate accrued interest</CardTitle>
-          <CardDescription>GET /interest/calculate?fromDate=&toDate=</CardDescription>
+          <CardDescription>Estimate interest accrual across a date interval before booking.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
           <div className="grid gap-1.5">
@@ -292,9 +292,7 @@ function AccountInterestContent() {
         <Card className="max-w-2xl">
           <CardHeader>
             <CardTitle>Post interest</CardTitle>
-            <CardDescription>
-              POST /interest/post — books an interest movement onto the account.
-            </CardDescription>
+            <CardDescription>Book a finalized interest movement onto the account for a posting date.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 sm:grid-cols-2">
             <div className="grid gap-1.5">

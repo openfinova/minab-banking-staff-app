@@ -1141,7 +1141,6 @@ export const loanGuarantorsApi = {
       guaranteePercentage?: number;
       relationshipToCustomer?: string;
       remarks?: string;
-      addedBy?: string;
     },
   ) => api.post<GuarantorResponse>(`${guarBase(loanAccountId)}`, body),
 
@@ -1159,17 +1158,13 @@ export const loanGuarantorsApi = {
   verify: (loanAccountId: string, id: string, body: Record<string, unknown> = {}) =>
     api.post<GuarantorResponse>(`${guarBase(loanAccountId)}/${e(id)}/verify`, body),
 
-  updateStatus: (
-    loanAccountId: string,
-    id: string,
-    body: { newStatus: GuarantorStatus; updatedBy: string },
-  ) =>
+  updateStatus: (loanAccountId: string, id: string, body: { newStatus: GuarantorStatus }) =>
     api.post<GuarantorResponse>(`${guarBase(loanAccountId)}/${e(id)}/status`, body),
 
-  release: (loanAccountId: string, id: string, body: { releasedBy: string }) =>
-    api.post<GuarantorResponse>(`${guarBase(loanAccountId)}/${e(id)}/release`, body),
+  release: (loanAccountId: string, id: string) =>
+    api.post<GuarantorResponse>(`${guarBase(loanAccountId)}/${e(id)}/release`, {}),
 
-  remove: (loanAccountId: string, id: string, body: { removalReason: string; removedBy: string }) =>
+  remove: (loanAccountId: string, id: string, body: { removalReason: string }) =>
     request<void>(`${guarBase(loanAccountId)}/${e(id)}/remove`, { method: "POST", body }),
 
   activeCount: (loanAccountId: string) =>
@@ -1189,7 +1184,6 @@ export const loanCollectionsApi = {
       notes: string;
       followUpDate?: string;
       assignedTo?: string;
-      createdBy?: string;
     },
   ) => api.post<CollectionActivityResponse>(`${colActBase(loanAccountId)}`, body),
 
@@ -1220,14 +1214,14 @@ export const loanCollectionsApi = {
   update: (
     loanAccountId: string,
     id: string,
-    body: { notes?: string; followUpDate?: string; updatedBy: string },
+    body: { notes?: string; followUpDate?: string },
   ) =>
     api.put<CollectionActivityResponse>(`${colActBase(loanAccountId)}/${e(id)}`, body),
 
   updateStatus: (
     loanAccountId: string,
     id: string,
-    body: { newStatus: CollectionStatus; updatedBy: string },
+    body: { newStatus: CollectionStatus },
   ) =>
     api.post<CollectionActivityResponse>(
       `${colActBase(loanAccountId)}/${e(id)}/status`,
@@ -1237,7 +1231,7 @@ export const loanCollectionsApi = {
   complete: (
     loanAccountId: string,
     id: string,
-    body: { outcome: string; completedBy: string },
+    body: { outcome: string },
   ) =>
     api.post<CollectionActivityResponse>(
       `${colActBase(loanAccountId)}/${e(id)}/complete`,
@@ -1247,7 +1241,7 @@ export const loanCollectionsApi = {
   scheduleFollowUp: (
     loanAccountId: string,
     id: string,
-    body: { followUpDate: string; followUpType: CollectionActivityType; scheduledBy: string },
+    body: { followUpDate: string; followUpType: CollectionActivityType },
   ) =>
     api.post<CollectionActivityResponse>(
       `${colActBase(loanAccountId)}/${e(id)}/schedule-followup`,

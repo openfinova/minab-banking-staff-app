@@ -69,7 +69,7 @@ function LoanProductsContent() {
     <div className="space-y-6">
       <PageHeader
         title="Loan products"
-        description="Paged catalog — GET /api/v1/loan-products. Toggle inactive, filter by type, or open a product for fees and validation."
+        description="Browse and activate loan offerings — filter, toggle inactive, open a product for fee and eligibility setup."
         actions={
           <Button asChild>
             <Link href="/loans/products/new">New product</Link>

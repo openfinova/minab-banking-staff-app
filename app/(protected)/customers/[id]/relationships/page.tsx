@@ -43,7 +43,6 @@ import {
   customerRelationshipsApi,
   type CustomerRelationshipType,
 } from "@/lib/api/modules/customers";
-import { useAuthStore } from "@/lib/auth/auth-store";
 import { Permissions } from "@/lib/rbac/permissions";
 import { CustomerQuickLookup } from "@/components/customers/customer-quick-lookup";
 
@@ -93,15 +92,9 @@ function CustomerRelationshipsContent() {
   const customerId = typeof params?.id === "string" ? params.id : "";
   const qc = useQueryClient();
   const { toast } = useToast();
-  const username = useAuthStore((s) => s.session?.user.username ?? "operator");
   const [open, setOpen] = React.useState(false);
   const [relatedIdInput, setRelatedIdInput] = React.useState("");
   const [relType, setRelType] = React.useState<CustomerRelationshipType>("SPOUSE");
-  const [createdBy, setCreatedBy] = React.useState(username);
-
-  React.useEffect(() => {
-    setCreatedBy(username);
-  }, [username]);
 
   const list = useQuery({
     queryKey: ["customers", customerId, "relationships"],
@@ -114,7 +107,6 @@ function CustomerRelationshipsContent() {
       customerRelationshipsApi.create(customerId, {
         relatedCustomerId: relatedIdInput.trim(),
         relationshipType: relType,
-        createdBy: createdBy.trim() || username,
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers", customerId, "relationships"] });
@@ -127,8 +119,8 @@ function CustomerRelationshipsContent() {
   });
 
   const remove = useMutation({
-    mutationFn: (p: { relationshipId: string; removedBy: string }) =>
-      customerRelationshipsApi.remove(customerId, p.relationshipId, p.removedBy),
+    mutationFn: (p: { relationshipId: string }) =>
+      customerRelationshipsApi.remove(customerId, p.relationshipId),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["customers", customerId, "relationships"] });
       toast({ title: "Relationship removed" });
@@ -150,7 +142,7 @@ function CustomerRelationshipsContent() {
             <Button variant="outline" size="sm" asChild>
               <Link href={`/customers/${customerId}`}>Back to customer</Link>
             </Button>
-            <span className="text-muted-foreground">{`GET /api/v1/customers/{id}/relationships`}</span>
+            <span className="text-muted-foreground text-sm">Counterparties, shareholders, and other linked parties.</span>
           </span>
         }
         actions={
@@ -163,7 +155,8 @@ function CustomerRelationshipsContent() {
                 <DialogHeader>
                   <DialogTitle>Create relationship</DialogTitle>
                   <DialogDescription>
-                    POST with query params relatedCustomerId, relationshipType, createdBy.
+                    Pick the related customer UUID and relationship category. The signed-in operator is recorded on
+                    the server.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-3 py-2">
@@ -197,10 +190,6 @@ function CustomerRelationshipsContent() {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="cb">Created by</Label>
-                    <Input id="cb" value={createdBy} onChange={(e) => setCreatedBy(e.target.value)} />
                   </div>
                 </div>
                 <DialogFooter>
@@ -267,7 +256,6 @@ function CustomerRelationshipsContent() {
                           onClick={() =>
                             remove.mutate({
                               relationshipId: r.id,
-                              removedBy: username,
                             })
                           }
                         >

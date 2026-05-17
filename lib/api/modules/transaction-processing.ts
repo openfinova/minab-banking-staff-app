@@ -43,7 +43,6 @@ export interface InitiateTransactionRequest {
   transactionType: string;
   amount: number;
   currency: string;
-  createdBy: string;
   sourceAccountId?: string;
   destinationAccountId?: string;
   requestedTransactionDate?: string;
@@ -94,11 +93,11 @@ export const transactionsApi = {
     api.get<Record<string, unknown>>(`/api/v1/transactions/${id}/refundable-amount`),
   initiate: (body: InitiateTransactionRequest) =>
     api.post<TransactionResponse>("/api/v1/transactions", body),
-  fullRefund: (id: string, body: { originalTransactionId: string; reason: string; initiatedBy?: string }) =>
+  fullRefund: (id: string, body: { originalTransactionId: string; reason: string }) =>
     api.post<TransactionResponse>(`/api/v1/transactions/${id}/refund/full`, body),
   partialRefund: (
     id: string,
-    body: { originalTransactionId: string; reason: string; refundAmount: number; initiatedBy?: string },
+    body: { originalTransactionId: string; reason: string; refundAmount: number },
   ) => api.post<TransactionResponse>(`/api/v1/transactions/${id}/refund/partial`, body),
 };
 

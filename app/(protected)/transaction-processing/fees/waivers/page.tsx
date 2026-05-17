@@ -105,6 +105,13 @@ function FeeWaiversContent() {
   const [maxUsageCount, setMaxUsageCount] = React.useState("");
   const [conditionsJson, setConditionsJson] = React.useState("");
   const [metadataJson, setMetadataJson] = React.useState("");
+  const [chMobile, setChMobile] = React.useState(false);
+  const [chBranch, setChBranch] = React.useState(false);
+  const [chInternet, setChInternet] = React.useState(false);
+  const [chAtm, setChAtm] = React.useState(false);
+  const [structuredMinAmount, setStructuredMinAmount] = React.useState("");
+  const [structuredCountry, setStructuredCountry] = React.useState("");
+  const [showAdvConditions, setShowAdvConditions] = React.useState(false);
 
   const list = useQuery({
     queryKey: ["fee-waivers", waiverScopeId],
@@ -117,8 +124,34 @@ function FeeWaiversContent() {
       let conditions: Record<string, unknown> | undefined;
       let metadata: Record<string, unknown> | undefined;
       try {
-        conditions = parseOptionalJsonObject(conditionsJson, "Conditions");
         metadata = parseOptionalJsonObject(metadataJson, "Metadata");
+
+        const structured: Record<string, unknown> = {};
+        const channels: string[] = [];
+        if (chMobile) channels.push("MOBILE");
+        if (chBranch) channels.push("BRANCH");
+        if (chInternet) channels.push("INTERNET");
+        if (chAtm) channels.push("ATM");
+        if (channels.length) structured.channels = channels;
+
+        const minAmt = structuredMinAmount.trim();
+        if (minAmt) {
+          const n = Number(minAmt);
+          if (Number.isNaN(n) || n < 0) {
+            throw new Error("Minimum ticket amount must be a non-negative number.");
+          }
+          structured.minTransactionAmount = n;
+        }
+
+        const cc = structuredCountry.trim().toUpperCase();
+        if (cc) structured.countryCode = cc;
+
+        let merged: Record<string, unknown> = { ...structured };
+        if (showAdvConditions && conditionsJson.trim()) {
+          const adv = parseOptionalJsonObject(conditionsJson, "Conditions");
+          merged = { ...merged, ...adv };
+        }
+        conditions = Object.keys(merged).length ? merged : undefined;
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Invalid JSON";
         throw new Error(msg);
@@ -166,14 +199,14 @@ function FeeWaiversContent() {
     <div className="space-y-6">
       <PageHeader
         title="Fee waivers"
-        description="POST /api/v1/fees/waivers (admin:config:write) · resolve account (or customer→accounts), then list waivers for that account id."
+        description="Issue tariff relief for a single account. Structured rules cover most channel and amount policies; fall back to advanced JSON only when product control requires it."
       />
       <Card>
         <CardHeader>
           <CardTitle>Lookup</CardTitle>
           <CardDescription>
-            Waivers are keyed by account id on the server. Search by account id, number, IBAN, or customer
-            (name, email, phone, …) and choose an account.
+            Search for the servicing account (number, IBAN, or customer linkage), then review active waivers tied to
+            that account id in the fee service.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -318,29 +351,88 @@ function FeeWaiversContent() {
                 </div>
               </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="waiver-conditions">Conditions (JSON object)</Label>
-                <Textarea
-                  id="waiver-conditions"
-                  value={conditionsJson}
-                  onChange={(e) => setConditionsJson(e.target.value)}
-                  rows={4}
-                  className="font-mono text-xs"
-                  placeholder='e.g. { "channel": "ATM" }'
-                />
+            <div className="space-y-4 rounded-md border p-4">
+              <div>
+                <Label className="text-sm font-medium">Servicing channels</Label>
+                <p className="text-xs text-muted-foreground">
+                  Limits the waiver to specific delivery rails when the tariff engine honours channel metadata.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={chMobile} onCheckedChange={(c) => setChMobile(c === true)} />
+                    Mobile
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={chBranch} onCheckedChange={(c) => setChBranch(c === true)} />
+                    Branch
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={chInternet} onCheckedChange={(c) => setChInternet(c === true)} />
+                    Internet
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <Checkbox checked={chAtm} onCheckedChange={(c) => setChAtm(c === true)} />
+                    ATM
+                  </label>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="waiver-metadata">Metadata (JSON object)</Label>
-                <Textarea
-                  id="waiver-metadata"
-                  value={metadataJson}
-                  onChange={(e) => setMetadataJson(e.target.value)}
-                  rows={4}
-                  className="font-mono text-xs"
-                  placeholder='e.g. { "ticketId": "INC-123" }'
-                />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="waiver-min-txn">Minimum ticket amount</Label>
+                  <Input
+                    id="waiver-min-txn"
+                    inputMode="decimal"
+                    placeholder="Optional threshold"
+                    value={structuredMinAmount}
+                    onChange={(e) => setStructuredMinAmount(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">Applies where the billing engine evaluates amount bands.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="waiver-country">Customer / booking country (ISO)</Label>
+                  <Input
+                    id="waiver-country"
+                    maxLength={2}
+                    placeholder="e.g. US"
+                    value={structuredCountry}
+                    onChange={(e) => setStructuredCountry(e.target.value)}
+                  />
+                </div>
               </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="waiver-adv-cond"
+                  checked={showAdvConditions}
+                  onCheckedChange={(c) => setShowAdvConditions(c === true)}
+                />
+                <Label htmlFor="waiver-adv-cond" className="font-normal">
+                  Advanced JSON (merge over structured fields)
+                </Label>
+              </div>
+              {showAdvConditions ? (
+                <div className="space-y-1.5">
+                  <Label htmlFor="waiver-conditions">Conditions JSON</Label>
+                  <Textarea
+                    id="waiver-conditions"
+                    value={conditionsJson}
+                    onChange={(e) => setConditionsJson(e.target.value)}
+                    rows={4}
+                    className="font-mono text-xs"
+                    placeholder='e.g. { "channel": "ATM" }'
+                  />
+                </div>
+              ) : null}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="waiver-metadata">Metadata (JSON object)</Label>
+              <Textarea
+                id="waiver-metadata"
+                value={metadataJson}
+                onChange={(e) => setMetadataJson(e.target.value)}
+                rows={3}
+                className="font-mono text-xs"
+                placeholder='e.g. { "ticketId": "INC-123" }'
+              />
             </div>
             <Button
               type="button"

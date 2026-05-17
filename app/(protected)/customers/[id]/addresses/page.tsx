@@ -167,7 +167,7 @@ function CustomerAddressesContent() {
             <Button variant="outline" size="sm" asChild>
               <Link href={`/customers/${customerId}`}>Back to customer</Link>
             </Button>
-            <span className="text-muted-foreground">{`GET /api/v1/customers/{id}/addresses`}</span>
+            <span className="text-muted-foreground text-sm">Registered postal and service addresses for this party.</span>
           </span>
         }
         actions={
@@ -188,9 +188,7 @@ function CustomerAddressesContent() {
                 <DialogHeader>
                   <DialogTitle>{editAddressId ? "Edit address" : "Add address"}</DialogTitle>
                   <DialogDescription>
-                    {editAddressId
-                      ? `PUT /api/v1/customers/{id}/addresses/{addressId}`
-                      : `POST /api/v1/customers/{id}/addresses`}
+                    {editAddressId ? "Update the saved address row in place." : "Add another address with full validation."}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-3 py-2">

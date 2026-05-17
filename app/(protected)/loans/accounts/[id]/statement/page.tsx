@@ -36,7 +36,7 @@ function StatementContent() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Loan statement" description="GET /api/v1/loan-accounts/{id}/statement" />
+      <PageHeader title="Loan statement" description="Outstanding position and repayment schedule servicing view." />
       <LoanServicingLinks loanAccountId={id} />
       <Card>
         <CardContent className="pt-6 flex flex-wrap items-end gap-3">

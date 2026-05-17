@@ -138,7 +138,7 @@ function LoanProductDetailContent() {
     <div className="space-y-6">
       <PageHeader
         title={`Product ${detail.data?.productCode}`}
-        description={`PUT /api/v1/loan-products/${id}`}
+        description="Tune this product's pricing, tenor limits, repayment rules, and fee profiles."
         actions={
           <Button variant="outline" onClick={() => router.push("/loans/products")}>
             Back
@@ -290,7 +290,7 @@ function LoanProductDetailContent() {
       <Card>
         <CardHeader>
           <CardTitle>Validation & fees</CardTitle>
-          <CardDescription>GET /validate, /fees/processing, /fees/late, /fees/prepayment</CardDescription>
+          <CardDescription>Check eligibility for sample amounts and inspect processing, late, and prepayment fee settings.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex flex-wrap items-end gap-2">

@@ -52,7 +52,7 @@ function Content() {
     <div className="space-y-6">
       <PageHeader
         title="Rate on a date"
-        description="GET /api/v1/exchange/rate/historical — published mid rate for a specific effective date."
+        description="Look up the official mid published for a historic business date."
       />
       <Card>
         <CardHeader>

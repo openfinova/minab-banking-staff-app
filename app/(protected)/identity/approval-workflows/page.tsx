@@ -8,6 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -53,6 +60,12 @@ export default function ApprovalWorkflowsPage() {
 function ApprovalWorkflowsContent() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const resourceTypesQuery = useQuery({
+    queryKey: ["approval-workflows", "resource-types"],
+    queryFn: approvalWorkflowsApi.resourceTypes,
+  });
+  const resourceTypeOptions =
+    resourceTypesQuery.data?.length ? resourceTypesQuery.data : ["USER_PROVISIONING"];
   const [resourceType, setResourceType] = React.useState("USER_PROVISIONING");
   const [filterDraft, setFilterDraft] = React.useState(resourceType);
   const [detailId, setDetailId] = React.useState<string | null>(null);
@@ -100,7 +113,10 @@ function ApprovalWorkflowsContent() {
         description="Multi-step approval chains for resource governance and identity changes."
         actions={
           <Can permissions={[Permissions.AdminDoaWrite]}>
-            <StartWorkflowDialog currentResourceType={resourceType} />
+            <StartWorkflowDialog
+              resourceTypeOptions={resourceTypeOptions}
+              defaultResourceType={resourceType}
+            />
           </Can>
         }
       />
@@ -108,12 +124,22 @@ function ApprovalWorkflowsContent() {
         <CardContent className="flex flex-wrap items-end gap-3 pt-6">
           <div className="space-y-1.5">
             <Label className="text-xs uppercase text-muted-foreground">Resource type</Label>
-            <Input
+            <Select
               value={filterDraft}
-              onChange={(e) => setFilterDraft(e.target.value)}
-              placeholder="USER_PROVISIONING"
-              className="w-[260px]"
-            />
+              onValueChange={setFilterDraft}
+              disabled={resourceTypesQuery.isLoading}
+            >
+              <SelectTrigger className="w-[260px]">
+                <SelectValue placeholder="Resource type" />
+              </SelectTrigger>
+              <SelectContent>
+                {resourceTypeOptions.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <Button onClick={() => setResourceType(filterDraft)}>
             <Search className="h-4 w-4" /> Apply
@@ -249,17 +275,23 @@ function WorkflowDetailBody({ wf }: { wf: ApprovalWorkflow }) {
   );
 }
 
-function StartWorkflowDialog({ currentResourceType }: { currentResourceType: string }) {
+function StartWorkflowDialog({
+  resourceTypeOptions,
+  defaultResourceType,
+}: {
+  resourceTypeOptions: string[];
+  defaultResourceType: string;
+}) {
   const [open, setOpen] = React.useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [resourceType, setResourceType] = React.useState(currentResourceType);
+  const [resourceType, setResourceType] = React.useState(defaultResourceType);
   const [resourceId, setResourceId] = React.useState("");
   const [rolesCsv, setRolesCsv] = React.useState("");
 
   React.useEffect(() => {
-    if (open) setResourceType(currentResourceType);
-  }, [open, currentResourceType]);
+    if (open) setResourceType(defaultResourceType);
+  }, [open, defaultResourceType]);
 
   const start = useMutation({
     mutationFn: () => {
@@ -302,14 +334,24 @@ function StartWorkflowDialog({ currentResourceType }: { currentResourceType: str
         <DialogHeader>
           <DialogTitle>Start approval workflow</DialogTitle>
           <DialogDescription>
-            Calls <span className="font-mono">POST /api/v1/identity/approval-workflows</span> with an
-            ordered list of GL roles (each approver step).
+            Starts a governed chain: provide the resource and an ordered list of GL roles (one approver step each).
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
           <div className="space-y-1.5">
             <Label>Resource type</Label>
-            <Input value={resourceType} onChange={(e) => setResourceType(e.target.value)} />
+            <Select value={resourceType} onValueChange={setResourceType}>
+              <SelectTrigger>
+                <SelectValue placeholder="Resource type" />
+              </SelectTrigger>
+              <SelectContent>
+                {resourceTypeOptions.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {t}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1.5">
             <Label>Resource ID</Label>

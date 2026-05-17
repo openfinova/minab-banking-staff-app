@@ -112,7 +112,7 @@ function VelocityLimitsContent() {
           <Card>
             <CardHeader>
               <CardTitle>Account limits</CardTitle>
-              <CardDescription>GET /api/v1/velocity-limits/account/:accountId</CardDescription>
+              <CardDescription>Load configured caps and recent breaches for the resolved account.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">

@@ -56,7 +56,7 @@ function ChangePasswordContent() {
       <Card className="max-w-lg">
         <CardHeader>
           <CardTitle>Update credentials</CardTitle>
-          <CardDescription>Calls `PATCH /api/v1/identity/me/password`.</CardDescription>
+          <CardDescription>Uses your authenticated session to rotate credentials.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>

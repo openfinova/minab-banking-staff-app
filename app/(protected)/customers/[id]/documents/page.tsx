@@ -180,8 +180,8 @@ function CustomerDocumentsContent() {
             <Button variant="outline" size="sm" asChild>
               <Link href={`/customers/${customerId}`}>Back to customer</Link>
             </Button>
-            <span className="text-muted-foreground">
-              {`/api/v1/customers/{id}/documents — list requires customer:pii:read; masked document numbers in responses.`}
+            <span className="text-muted-foreground text-sm">
+              KYC proofs and government IDs — viewing needs customer:pii:read; sensitive numbers may appear masked.
             </span>
           </span>
         }
@@ -273,7 +273,7 @@ function CustomerDocumentsContent() {
       <Card>
         <CardHeader>
           <CardTitle>Documents</CardTitle>
-          <CardDescription>Regulatory record; numbers are masked in API responses.</CardDescription>
+          <CardDescription>Regulatory record; numbers are masked in listings for privacy.</CardDescription>
         </CardHeader>
         <CardContent>
           {list.isLoading ? (
