@@ -25,7 +25,7 @@ function formatMoney(v: string | number | undefined, currency: string | undefine
   if (v === undefined || v === null) return "—";
   const n = typeof v === "string" ? Number(v) : v;
   if (Number.isNaN(n)) return String(v);
-  const ccy = currency ?? "USD";
+  const ccy = currency ?? "EUR";
   return new Intl.NumberFormat(undefined, { style: "currency", currency: ccy }).format(n);
 }
 

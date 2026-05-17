@@ -55,7 +55,7 @@ function Content() {
   const [ctype, setCtype] = React.useState<CollateralType>("REAL_ESTATE");
   const [desc, setDesc] = React.useState("");
   const [valAmt, setValAmt] = React.useState("10000");
-  const [ccy, setCcy] = React.useState("USD");
+  const [ccy, setCcy] = React.useState("EUR");
   const [valDate, setValDate] = React.useState("");
   const [loc, setLoc] = React.useState("");
 

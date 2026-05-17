@@ -23,7 +23,7 @@ export default function ExchangeRateByDatePage() {
 
 function Content() {
   const { toast } = useToast();
-  const [source, setSource] = React.useState("USD");
+  const [source, setSource] = React.useState("EUR");
   const [target, setTarget] = React.useState("EUR");
   const [rateType, setRateType] = React.useState<RateType>("SPOT");
   const [date, setDate] = React.useState(() => new Date().toISOString().slice(0, 10));

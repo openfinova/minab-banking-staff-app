@@ -32,7 +32,7 @@ function NewAppContent() {
   const [productId, setProductId] = React.useState("");
   const [requestedAmount, setRequestedAmount] = React.useState("5000");
   const [requestedTenorMonths, setRequestedTenorMonths] = React.useState("12");
-  const [currency, setCurrency] = React.useState("USD");
+  const [currency, setCurrency] = React.useState("EUR");
   const [purpose, setPurpose] = React.useState("");
   const [remarks, setRemarks] = React.useState("");
 

@@ -342,7 +342,7 @@ function TpTransactionsContent() {
           </div>
           <div className="space-y-1.5">
             <Label>Settlement currency (ISO)</Label>
-            <Input value={currency} onChange={(e) => setCurrency(e.target.value)} placeholder="USD" />
+            <Input value={currency} onChange={(e) => setCurrency(e.target.value)} placeholder="EUR" />
           </div>
           <div className="space-y-1.5">
             <Label>Booking reference contains</Label>
@@ -460,7 +460,7 @@ function InitiateDialog({ onSuccess }: { onSuccess: () => void }) {
   const [idempotencyKey, setIdempotencyKey] = React.useState("");
   const [transactionType, setTxnType] = React.useState<string>("P2P");
   const [amount, setAmount] = React.useState("");
-  const [currency, setCurrency] = React.useState("USD");
+  const [currency, setCurrency] = React.useState("EUR");
   const [sourceAccountId, setSource] = React.useState("");
   const [destinationAccountId, setDest] = React.useState("");
   const [description, setDescription] = React.useState("");

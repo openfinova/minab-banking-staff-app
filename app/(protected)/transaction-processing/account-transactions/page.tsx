@@ -232,7 +232,7 @@ function RecordTransactionDialog({
   const [acct, setAcct] = React.useState("");
   const [type, setType] = React.useState("DEPOSIT");
   const [amount, setAmount] = React.useState("");
-  const [currency, setCurrency] = React.useState("USD");
+  const [currency, setCurrency] = React.useState("EUR");
   const [txDate, setTxDate] = React.useState(() => new Date().toISOString().slice(0, 16));
   const [description, setDescription] = React.useState("");
   const [ref, setRef] = React.useState("");

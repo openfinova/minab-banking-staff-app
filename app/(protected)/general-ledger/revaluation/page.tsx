@@ -106,7 +106,7 @@ function RevaluationContent() {
                     <TableCell className="text-xs">{r.revaluationDate}</TableCell>
                     <TableCell className="text-xs">{r.executedBy ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono text-xs">
-                      {formatCurrency(Number(r.totalAdjustment ?? 0), r.baseCurrency ?? "USD")}
+                      {formatCurrency(Number(r.totalAdjustment ?? 0), r.baseCurrency ?? "EUR")}
                     </TableCell>
                     <TableCell className="text-right text-xs">{r.accountsProcessed ?? "—"}</TableCell>
                   </TableRow>

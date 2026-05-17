@@ -23,7 +23,7 @@ export default function ExchangeConvertPage() {
 function Content() {
   const { toast } = useToast();
   const [amount, setAmount] = React.useState("1000");
-  const [from, setFrom] = React.useState("USD");
+  const [from, setFrom] = React.useState("EUR");
   const [to, setTo] = React.useState("EUR");
   const [conversionDate, setConversionDate] = React.useState("");
   const [result, setResult] = React.useState<Record<string, unknown> | null>(null);

@@ -225,7 +225,7 @@ function StandardChartDialog({
   triggerClassName?: string;
 }) {
   const [open, setOpen] = React.useState(false);
-  const [currency, setCurrency] = React.useState("USD");
+  const [currency, setCurrency] = React.useState("EUR");
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

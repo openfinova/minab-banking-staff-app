@@ -23,7 +23,7 @@ export default function ExchangeRateDetailsPage() {
 
 function Content() {
   const { toast } = useToast();
-  const [source, setSource] = React.useState("USD");
+  const [source, setSource] = React.useState("EUR");
   const [target, setTarget] = React.useState("EUR");
   const [rateType, setRateType] = React.useState<RateType>("SPOT");
   const [details, setDetails] = React.useState<ExchangeRateResponse | null>(null);

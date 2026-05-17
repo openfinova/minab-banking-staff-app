@@ -23,7 +23,7 @@ export default function ExchangeCurrencySupportPage() {
 
 function Content() {
   const { toast } = useToast();
-  const [code, setCode] = React.useState("USD");
+  const [code, setCode] = React.useState("EUR");
   const [supported, setSupported] = React.useState<boolean | null>(null);
 
   const check = async () => {

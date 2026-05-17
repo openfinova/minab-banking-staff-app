@@ -36,7 +36,7 @@ function GlSetupContent() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [currency, setCurrency] = React.useState("USD");
+  const [currency, setCurrency] = React.useState("EUR");
   const [fiscalYear, setFiscalYear] = React.useState(new Date().getFullYear());
 
   const bootstrap = useGlBootstrapComplete(true);

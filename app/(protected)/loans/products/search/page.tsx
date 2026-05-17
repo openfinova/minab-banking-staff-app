@@ -31,7 +31,7 @@ export default function LoanProductsSearchPage() {
 function SearchContent() {
   const [amount, setAmount] = React.useState("10000");
   const [tenor, setTenor] = React.useState("24");
-  const [currency, setCurrency] = React.useState("USD");
+  const [currency, setCurrency] = React.useState("EUR");
 
   const search = useMutation({
     mutationFn: () => loanProductsApi.findMatching(Number(amount), Number(tenor), currency),

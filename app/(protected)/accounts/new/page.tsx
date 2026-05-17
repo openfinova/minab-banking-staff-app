@@ -49,7 +49,7 @@ function NewAccountContent() {
 
   const [primaryUserProfileId, setPrimaryUserProfileId] = React.useState("");
   const [productType, setProductType] = React.useState<AccountProductType>("CHECKING");
-  const [currency, setCurrency] = React.useState("USD");
+  const [currency, setCurrency] = React.useState("EUR");
   const [accountNumber, setAccountNumber] = React.useState("");
 
   const normalizedAccountNumber = accountNumber.trim().toUpperCase();

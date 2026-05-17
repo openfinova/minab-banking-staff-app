@@ -82,7 +82,7 @@ function AccountHoldsContent() {
     mutationFn: () =>
       accountsApi.placeHold(id, {
         amount: Number(amount),
-        currency: (detail.data?.currency ?? "USD").toUpperCase(),
+        currency: (detail.data?.currency ?? "EUR").toUpperCase(),
         reason: reason.trim(),
         expiresAt: expiresAt.trim() || undefined,
       }),
@@ -141,7 +141,7 @@ function AccountHoldsContent() {
     return <EmptyState title="Could not load holds" description={describeApiError(list.error)} />;
   }
 
-  const ccy = detail.data?.currency ?? "USD";
+  const ccy = detail.data?.currency ?? "EUR";
   const rows = list.data ?? [];
 
   return (

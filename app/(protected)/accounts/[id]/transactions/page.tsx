@@ -88,7 +88,7 @@ function AccountTransactionsContent() {
     return <EmptyState title="Missing account id" />;
   }
 
-  const ccy = detail.data?.currency ?? "USD";
+  const ccy = detail.data?.currency ?? "EUR";
   const rows = list.data?.content ?? [];
   const totalPages = list.data?.totalPages ?? 0;
 

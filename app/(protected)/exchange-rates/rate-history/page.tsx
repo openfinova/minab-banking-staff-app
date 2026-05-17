@@ -47,7 +47,7 @@ export default function ExchangeRateHistoryPage() {
 function Content() {
   const { toast } = useToast();
 
-  const [histSource, setHistSource] = React.useState("USD");
+  const [histSource, setHistSource] = React.useState("EUR");
   const [histTarget, setHistTarget] = React.useState("EUR");
   const [histType, setHistType] = React.useState<RateType>("SPOT");
   const [histStart, setHistStart] = React.useState(

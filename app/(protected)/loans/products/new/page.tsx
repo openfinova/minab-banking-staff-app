@@ -43,7 +43,7 @@ const empty: LoanProductRequestBody = {
   interestCalculationMethod: "REDUCING_BALANCE",
   repaymentFrequency: "MONTHLY",
   amortizationType: "EQUAL_INSTALLMENTS",
-  currency: "USD",
+  currency: "EUR",
   collateralRequired: false,
   guarantorRequired: false,
   gracePeriodDays: 0,

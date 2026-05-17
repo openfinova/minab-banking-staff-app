@@ -78,7 +78,7 @@ function SuspenseContent() {
                       </TableCell>
                       <TableCell className="text-xs">{r.reasonCode ?? "—"}</TableCell>
                       <TableCell className="text-right font-mono text-xs">
-                        {formatCurrency(Number(r.amount ?? 0), r.currency ?? "USD")}
+                        {formatCurrency(Number(r.amount ?? 0), r.currency ?? "EUR")}
                       </TableCell>
                     </TableRow>
                   ))}

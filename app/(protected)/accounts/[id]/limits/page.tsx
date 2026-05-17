@@ -148,7 +148,7 @@ function AccountLimitsContent() {
     return <EmptyState title="Could not load limits" description={describeApiError(list.error)} />;
   }
 
-  const ccy = detail.data?.currency ?? "USD";
+  const ccy = detail.data?.currency ?? "EUR";
   const rows = list.data ?? [];
 
   return (

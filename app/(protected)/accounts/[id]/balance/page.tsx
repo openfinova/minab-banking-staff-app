@@ -155,7 +155,7 @@ function AccountBalanceContent() {
   }
 
   const b = balance.data;
-  const ccy = b.currency ?? "USD";
+  const ccy = b.currency ?? "EUR";
   const availRaw = available.data?.availableBalance;
   const availNum = typeof availRaw === "string" ? Number(availRaw) : availRaw;
 

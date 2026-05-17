@@ -489,7 +489,7 @@ function CreateDelegationDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Currency (optional, max 3)</Label>
-              <Input {...form.register("currency")} placeholder="USD" maxLength={3} />
+              <Input {...form.register("currency")} placeholder="EUR" maxLength={3} />
               {form.formState.errors.currency ? (
                 <p className="text-xs text-destructive">{form.formState.errors.currency.message}</p>
               ) : null}

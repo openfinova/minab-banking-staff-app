@@ -132,7 +132,7 @@ function AccountStatementsContent() {
     return <EmptyState title="Missing account id" />;
   }
 
-  const ccy = detail.data?.currency ?? "USD";
+  const ccy = detail.data?.currency ?? "EUR";
 
   return (
     <div className="space-y-6">
