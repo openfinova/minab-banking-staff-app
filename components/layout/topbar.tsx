@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { LogOut, Moon, Sun, UserCircle, Search } from "lucide-react";
+import { LogOut, Moon, Sun, UserCircle, Search, Mail } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,6 +71,12 @@ export function Topbar() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/inbox" className="inline-flex">
+            <Button variant="ghost" size="sm" className="gap-2 px-2 md:px-3" aria-label="Internal inbox">
+              <Mail className="h-4 w-4 shrink-0" />
+              <span className="hidden text-sm md:inline">Inbox</span>
+            </Button>
+          </Link>
           <TopbarNotificationsBell />
           {mounted ? (
             <Button

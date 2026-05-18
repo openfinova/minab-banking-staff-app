@@ -1,5 +1,6 @@
 import {
   LayoutDashboard,
+  Mail,
   Users,
   ShieldCheck,
   Network,
@@ -81,7 +82,15 @@ export const navSections: NavSection[] = [
     id: "dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
-    items: [{ label: "Overview", href: "/dashboard", icon: LayoutDashboard }],
+    items: [
+      { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+      {
+        label: "Inbox",
+        title: "Staff notifications (personal and shared queues such as compliance).",
+        href: "/inbox",
+        icon: Mail,
+      },
+    ],
   },
   {
     id: "identity",

@@ -10,6 +10,7 @@ import { Can } from "@/components/rbac/can";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
@@ -212,6 +213,7 @@ function CustomerDetailContent() {
             <span className="font-mono text-xs">{c.customerNumber}</span>
             <StatusBadge status={c.status} />
             <StatusBadge status={c.kycStatus} />
+            {c.riskRating ? <Badge variant={c.riskRating === 'HIGH' || c.riskRating === 'UNACCEPTABLE' ? 'destructive' : c.riskRating === 'MEDIUM' ? 'warning' : 'secondary'}>Risk: {c.riskRating}</Badge> : null}
             {c.pepFlag ? <StatusBadge status="PEP" variantOverride="warning" /> : null}
             {c.sanctionFlag ? <StatusBadge status="SANCTIONS" variantOverride="destructive" /> : null}
             {c.linkedIdentityUsername ? (

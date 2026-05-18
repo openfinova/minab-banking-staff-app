@@ -117,6 +117,7 @@ export interface CustomerResponse {
   legalEntityType?: LegalEntityType;
   pepFlag?: boolean;
   sanctionFlag?: boolean;
+  riskRating?: string;
   linkedIdentityUserId?: string;
   linkedIdentityUsername?: string;
   createdAt?: string;
