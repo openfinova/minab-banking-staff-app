@@ -25,7 +25,7 @@ function shouldForceNextLoginPrompt(message: string): boolean {
   return /token exchange failed:\s*(401|403)\b/i.test(message);
 }
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const search = useSearchParams();
   const { setSession, setError } = useAuthStore();
@@ -120,5 +120,29 @@ export default function AuthCallbackPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Finishing sign-in</CardTitle>
+              <CardDescription>Loading…</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-32 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <AuthCallbackContent />
+    </React.Suspense>
   );
 }

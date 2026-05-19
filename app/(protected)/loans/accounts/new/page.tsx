@@ -18,7 +18,9 @@ import { loanAccountCreateSchema } from "@/lib/schemas/loans";
 export default function NewLoanAccountPage() {
   return (
     <RouteGuard permissions={[Permissions.LoanWrite]}>
-      <NewAccountContent />
+      <React.Suspense fallback={null}>
+        <NewAccountContent />
+      </React.Suspense>
     </RouteGuard>
   );
 }

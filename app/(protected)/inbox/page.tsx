@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { Mail, MailOpen, AlertCircle, Info, AlertTriangle } from "lucide-react";
+import { MailOpen, AlertCircle, Info, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { notificationsApi } from "@/lib/api/modules/notifications";

@@ -19,7 +19,9 @@ import { StatusBadge } from "@/components/data/status-badge";
 export default function TransactionLookupPage() {
   return (
     <RouteGuard permissions={[Permissions.GlRead]}>
-      <TransactionLookupContent />
+      <React.Suspense fallback={null}>
+        <TransactionLookupContent />
+      </React.Suspense>
     </RouteGuard>
   );
 }

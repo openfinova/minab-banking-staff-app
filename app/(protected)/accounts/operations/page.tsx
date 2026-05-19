@@ -48,7 +48,9 @@ function parseIds(text: string): string[] {
 export default function AccountsOperationsPage() {
   return (
     <RouteGuard permissions={[Permissions.AccountWrite]}>
-      <AccountsOperationsContent />
+      <React.Suspense fallback={null}>
+        <AccountsOperationsContent />
+      </React.Suspense>
     </RouteGuard>
   );
 }

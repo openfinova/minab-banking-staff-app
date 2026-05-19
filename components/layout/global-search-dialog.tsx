@@ -97,7 +97,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: { open: boolean; onOp
   });
 
   const customers = customerSearch.data?.content ?? [];
-  let taxCust: CustomerResponse | undefined =
+  const taxCust: CustomerResponse | undefined =
     customerTaxId.data && !customerTaxId.isError ? customerTaxId.data : undefined;
   let acct: AccountResponse | undefined;
   if (accountById.data && !accountById.isError) acct = accountById.data;

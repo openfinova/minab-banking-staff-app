@@ -13,7 +13,7 @@ const REASON_TEXT: Record<string, string> = {
   "access-denied": "You do not have access to that resource.",
 };
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const search = useSearchParams();
   const { isAuthenticated, isLoading, forcePasswordChange, loginWithRedirect } = useAuth();
@@ -75,5 +75,27 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <React.Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-muted/40 p-4">
+          <div className="w-full max-w-md space-y-6">
+            <Card>
+              <CardHeader className="text-center">
+                <CardTitle>Sign in</CardTitle>
+                <CardDescription>Loading…</CardDescription>
+              </CardHeader>
+              <CardContent className="h-24 animate-pulse rounded-md bg-muted" />
+            </Card>
+          </div>
+        </div>
+      }
+    >
+      <LoginContent />
+    </React.Suspense>
   );
 }

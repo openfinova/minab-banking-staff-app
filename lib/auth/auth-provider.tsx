@@ -47,6 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refreshTimer.current = setTimeout(() => {
       void doRefresh(current.refreshToken!, current);
     }, delay);
+    // doRefresh defined below; exhaustive-deps wants it here but ordering would create a stale loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- timer calls latest doRefresh from closure refresh
   }, []);
 
   const doRefresh = React.useCallback(
