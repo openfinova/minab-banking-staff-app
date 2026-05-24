@@ -11,21 +11,29 @@ import {
 } from "@/components/ui/accordion";
 import { NavGuard } from "@/components/rbac/nav-guard";
 import { navSections } from "@/lib/nav/navigation";
+import { isNavItemActive, resolveOpenSectionIds } from "@/lib/nav/route-matching";
 import { cn } from "@/lib/utils";
 import { Building2 } from "lucide-react";
 
 export function Sidebar() {
   const pathname = usePathname();
-  const defaultOpen = React.useMemo(() => {
-    const open = navSections.find((s) =>
-      s.items.some((item) => pathname?.startsWith(item.href)),
-    );
-    return open ? [open.id] : [navSections[0]?.id].filter(Boolean);
-  }, [pathname]);
+  const routeOpenSections = React.useMemo(
+    () => resolveOpenSectionIds(pathname),
+    [pathname],
+  );
+  const [openSections, setOpenSections] = React.useState<string[]>(routeOpenSections);
+
+  React.useEffect(() => {
+    setOpenSections((prev) => {
+      const merged = new Set([...prev, ...routeOpenSections]);
+      if (routeOpenSections.every((id) => prev.includes(id))) return prev;
+      return Array.from(merged);
+    });
+  }, [routeOpenSections]);
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r bg-card/40">
-      <div className="flex h-14 items-center gap-2 border-b px-4">
+    <aside className="flex h-screen w-64 shrink-0 flex-col border-r bg-card/40">
+      <div className="flex h-14 shrink-0 items-center gap-2 border-b px-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <Building2 className="h-4 w-4" />
         </div>
@@ -34,8 +42,13 @@ export function Sidebar() {
           <span className="text-xs text-muted-foreground leading-tight">Management Portal</span>
         </div>
       </div>
-      <nav className="flex-1 overflow-y-auto px-2 py-3 scrollbar-thin">
-        <Accordion type="multiple" defaultValue={defaultOpen} className="space-y-1">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-3 scrollbar-thin">
+        <Accordion
+          type="multiple"
+          value={openSections}
+          onValueChange={setOpenSections}
+          className="space-y-1"
+        >
           {navSections.map((section) => (
             <NavGuard
               key={section.id}
@@ -70,7 +83,7 @@ export function Sidebar() {
                             icon={item.icon ? <item.icon className="h-4 w-4" /> : null}
                             label={item.label}
                             title={item.title}
-                            active={pathname === item.href || (pathname?.startsWith(`${item.href}/`) ?? false)}
+                            active={isNavItemActive(pathname, item, section)}
                           />
                         </li>
                       </NavGuard>
@@ -82,7 +95,7 @@ export function Sidebar() {
           ))}
         </Accordion>
       </nav>
-      <div className="border-t p-3 text-xs text-muted-foreground">
+      <div className="shrink-0 border-t p-3 text-xs text-muted-foreground">
         Internal use only - admin & staff
       </div>
     </aside>

@@ -8,6 +8,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -250,7 +251,7 @@ function NewHolidayDialog() {
         <form className="grid gap-3" onSubmit={form.handleSubmit((v) => create.mutate(v))}>
           <div className="grid gap-3 md:grid-cols-2">
             <Field label="Date" error={form.formState.errors.date?.message}>
-              <Input type="date" {...form.register("date")} />
+              <DateInput value={form.watch("date") ?? ""} onChange={(v) => form.setValue("date", v, { shouldValidate: true })} />
             </Field>
             <Field label="Country code" error={form.formState.errors.countryCode?.message}>
               <Input maxLength={2} {...form.register("countryCode")} />

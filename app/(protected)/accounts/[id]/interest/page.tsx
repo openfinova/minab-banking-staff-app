@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { DateInput } from "@/components/ui/date-input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/use-toast";
@@ -264,14 +265,16 @@ function AccountInterestContent() {
           <CardDescription>Estimate interest accrual across a date interval before booking.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="cc-from">From</Label>
-            <DateInput id="cc-from" value={calcFrom} onChange={setCalcFrom} />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="cc-to">To</Label>
-            <DateInput id="cc-to" value={calcTo} onChange={setCalcTo} />
-          </div>
+          <DateRangeFilter
+            startDate={calcFrom}
+            endDate={calcTo}
+            startLabel="From"
+            endLabel="To"
+            onChange={({ startDate, endDate }) => {
+              setCalcFrom(startDate);
+              setCalcTo(endDate);
+            }}
+          />
           <Button
             type="button"
             variant="secondary"

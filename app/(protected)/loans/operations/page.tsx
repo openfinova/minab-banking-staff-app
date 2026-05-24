@@ -8,6 +8,7 @@ import { Can } from "@/components/rbac/can";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { describeApiError } from "@/lib/api/errors";
@@ -128,7 +129,7 @@ function Content() {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-2 items-end max-w-xl">
             <Input placeholder="Loan account UUID" value={mrId} onChange={(e) => setMrId(e.target.value)} className="font-mono text-xs flex-1 min-w-[12rem]" />
-            <Input type="date" value={mrDate} onChange={(e) => setMrDate(e.target.value)} />
+            <DateInput value={mrDate} onChange={setMrDate} />
             <Button disabled={markR.isPending || !mrId || !mrDate} onClick={() => markR.mutate()}>
               Mark restructured
             </Button>

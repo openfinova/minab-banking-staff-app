@@ -8,9 +8,12 @@ import { Can } from "@/components/rbac/can";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { LoanServicingLinks } from "@/components/loans/loan-servicing-links";
 import { StatusBadge } from "@/components/data/status-badge";
 import { describeApiError } from "@/lib/api/errors";
@@ -143,8 +146,16 @@ function Content() {
           ) : null}
           {view === "range" ? (
             <>
-              <Input type="date" className="w-40" value={rStart} onChange={(e) => setRStart(e.target.value)} />
-              <Input type="date" className="w-40" value={rEnd} onChange={(e) => setREnd(e.target.value)} />
+            <DateRangeFilter
+              startDate={rStart}
+              endDate={rEnd}
+              startInputClassName="w-40"
+              endInputClassName="w-40"
+              onChange={({ startDate, endDate }) => {
+                setRStart(startDate);
+                setREnd(endDate);
+              }}
+            />
             </>
           ) : null}
         </CardContent>
@@ -163,9 +174,9 @@ function Content() {
                 </option>
               ))}
             </select>
-            <Input type="date" value={adate} onChange={(e) => setAdate(e.target.value)} />
+            <DateInput value={adate} onChange={setAdate} />
             <Textarea placeholder="Notes" value={notes} onChange={(e) => setNotes(e.target.value)} />
-            <Input type="date" placeholder="Follow-up" value={fup} onChange={(e) => setFup(e.target.value)} />
+            <DateInput value={fup} onChange={setFup} />
             <Input placeholder="Assigned to" value={assign} onChange={(e) => setAssign(e.target.value)} />
             <Button
               disabled={create.isPending}
@@ -195,8 +206,14 @@ function Content() {
           <CardTitle>Period report</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2 items-end">
-          <Input type="date" value={repStart} onChange={(e) => setRepStart(e.target.value)} />
-          <Input type="date" value={repEnd} onChange={(e) => setRepEnd(e.target.value)} />
+          <DateRangeFilter
+            startDate={repStart}
+            endDate={repEnd}
+            onChange={({ startDate, endDate }) => {
+              setRepStart(startDate);
+              setRepEnd(endDate);
+            }}
+          />
           <Button size="sm" variant="outline" onClick={() => qc.invalidateQueries({ queryKey: ["loans", "coll-act", id, "report"] })}>
             Run
           </Button>
@@ -245,13 +262,13 @@ function ActivityRow({
   return (
     <div className="border rounded-md p-3 text-sm space-y-2">
       <div className="flex flex-wrap gap-2 items-center">
-        <span className="font-mono text-[10px]">{a.id}</span>
+        <CopyableUuid value={a.id} />
         {a.status ? <StatusBadge status={a.status} /> : null}
       </div>
       <Can permissions={[Permissions.LoanCollect]}>
         <div className="flex flex-wrap gap-2">
           <Textarea className="min-h-[60px]" value={upNotes} onChange={(e) => setUpNotes(e.target.value)} />
-          <Input type="date" className="w-36" value={upFup} onChange={(e) => setUpFup(e.target.value)} />
+          <DateInput className="w-36" value={upFup} onChange={setUpFup} />
           <Button
             size="sm"
             variant="outline"
@@ -291,7 +308,7 @@ function ActivityRow({
         </div>
         <div className="flex flex-wrap gap-2 items-center">
           <Label className="text-xs">Follow-up</Label>
-          <Input type="date" className="h-8 w-36" value={sfDate} onChange={(e) => setSfDate(e.target.value)} />
+          <DateInput className="h-8 w-36" value={sfDate} onChange={setSfDate} />
           <select className="h-8 border rounded text-xs" value={sfType} onChange={(e) => setSfType(e.target.value as CollectionActivityType)}>
             {ACT_TYPES.map((t) => (
               <option key={t} value={t}>

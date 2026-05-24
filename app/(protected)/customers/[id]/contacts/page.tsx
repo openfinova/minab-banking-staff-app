@@ -35,6 +35,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -247,6 +248,7 @@ function CustomerContactsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Value</TableHead>
                   <TableHead>Flags</TableHead>
@@ -256,6 +258,9 @@ function CustomerContactsContent() {
               <TableBody>
                 {list.data.map((row) => (
                   <TableRow key={row.id}>
+                    <TableCell>
+                      <CopyableUuid value={row.id} />
+                    </TableCell>
                     <TableCell>{row.type}</TableCell>
                     <TableCell>{row.value}</TableCell>
                     <TableCell className="space-x-1">

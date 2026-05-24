@@ -17,6 +17,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { describeApiError } from "@/lib/api/errors";
 import { loanAccountsApi, type LoanAccountResponse } from "@/lib/api/modules/loans";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { LoanStatusBadge } from "@/components/loans/loan-badges";
 
 const UUID_RE =
@@ -96,6 +97,7 @@ export function LoanQuickLookup({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>UUID</TableHead>
                 <TableHead>Account #</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Status</TableHead>
@@ -106,8 +108,16 @@ export function LoanQuickLookup({
             <TableBody>
               {rows.map((l) => (
                 <TableRow key={l.id}>
+                  <TableCell>
+                    <CopyableUuid
+                      value={l.id}
+                      href={hrefForLoan ? hrefForLoan(l.id) : `/loans/accounts/${l.id}`}
+                    />
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{l.loanAccountNumber}</TableCell>
-                  <TableCell className="font-mono text-xs">{l.customerId}</TableCell>
+                  <TableCell>
+                    <CopyableUuid value={l.customerId} href={l.customerId ? `/customers/${l.customerId}` : undefined} />
+                  </TableCell>
                   <TableCell>
                     <LoanStatusBadge status={l.status} />
                   </TableCell>

@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DateTimeInput } from "@/components/ui/datetime-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
@@ -25,6 +26,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { useToast } from "@/components/ui/use-toast";
@@ -305,21 +307,19 @@ function FeeWaiversContent() {
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="waiver-from">Effective from</Label>
-                <Input
+                <DateTimeInput
                   id="waiver-from"
-                  type="datetime-local"
                   value={effectiveFrom}
-                  onChange={(e) => setEffectiveFrom(e.target.value)}
+                  onChange={setEffectiveFrom}
                 />
                 <p className="text-xs text-muted-foreground">Leave blank to use server default (now).</p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="waiver-to">Effective to</Label>
-                <Input
+                <DateTimeInput
                   id="waiver-to"
-                  type="datetime-local"
                   value={effectiveTo}
-                  onChange={(e) => setEffectiveTo(e.target.value)}
+                  onChange={setEffectiveTo}
                 />
               </div>
             </div>
@@ -457,7 +457,7 @@ function FeeWaiversContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="whitespace-nowrap">Id</TableHead>
+                    <TableHead className="whitespace-nowrap">UUID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Tier</TableHead>
@@ -472,7 +472,9 @@ function FeeWaiversContent() {
                 <TableBody>
                   {list.data.map((w) => (
                     <TableRow key={w.id}>
-                      <TableCell className="font-mono text-xs whitespace-nowrap">{w.id}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <CopyableUuid value={w.id} />
+                      </TableCell>
                       <TableCell>{w.waiverName ?? w.reason ?? "—"}</TableCell>
                       <TableCell className="text-xs">{w.transactionType ?? "—"}</TableCell>
                       <TableCell className="text-xs">{w.customerTier ?? "—"}</TableCell>

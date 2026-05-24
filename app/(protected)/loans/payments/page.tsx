@@ -21,6 +21,7 @@ import { describeApiError } from "@/lib/api/errors";
 import { useToast } from "@/components/ui/use-toast";
 import { loanPaymentsApi } from "@/lib/api/modules/loans";
 import { Permissions } from "@/lib/rbac/permissions";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Pagination } from "@/components/data/pagination";
 import { LoanQuickLookup } from "@/components/loans/loan-quick-lookup";
 
@@ -115,7 +116,7 @@ function Hub() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>ID</TableHead>
+                      <TableHead>UUID</TableHead>
                       <TableHead>Account</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Date</TableHead>
@@ -124,8 +125,15 @@ function Hub() {
                   <TableBody>
                     {(reversed.data?.content ?? []).map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell className="font-mono text-[10px]">{r.id}</TableCell>
-                        <TableCell className="font-mono text-[10px]">{r.loanAccountId}</TableCell>
+                        <TableCell>
+                          <CopyableUuid value={r.id} />
+                        </TableCell>
+                        <TableCell>
+                          <CopyableUuid
+                            value={r.loanAccountId}
+                            href={r.loanAccountId ? `/loans/accounts/${r.loanAccountId}` : undefined}
+                          />
+                        </TableCell>
                         <TableCell>{r.paymentAmount}</TableCell>
                         <TableCell>{r.paymentDate}</TableCell>
                       </TableRow>

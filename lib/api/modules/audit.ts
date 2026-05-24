@@ -88,16 +88,24 @@ export interface SodViolationEntry {
 export interface ReportDateRange {
   startDate?: string;
   endDate?: string;
-  asOfDate?: string;
+}
+
+/** Maps UI date range to backend `from` / `to` ISO datetimes (inclusive day bounds). */
+function reportRangeQuery(range: ReportDateRange): { from?: string; to?: string } {
+  const query: { from?: string; to?: string } = {};
+  const start = range.startDate?.trim();
+  const end = range.endDate?.trim();
+  if (start) query.from = `${start}T00:00:00`;
+  if (end) query.to = `${end}T23:59:59`;
+  return query;
 }
 
 export const complianceReportsApi = {
-  userAccess: (range: ReportDateRange, page?: PageRequest) =>
+  userAccess: (page?: PageRequest) =>
     api.get<PageResponse<UserAccessReportEntry>>(
       "/api/v1/identity/compliance/reports/user-access",
       {
         query: {
-          ...(range as Record<string, string | undefined>),
           page: page?.page,
           size: page?.size,
           sort: page?.sort,
@@ -109,7 +117,7 @@ export const complianceReportsApi = {
       "/api/v1/identity/compliance/reports/permission-changes",
       {
         query: {
-          ...(range as Record<string, string | undefined>),
+          ...reportRangeQuery(range),
           page: page?.page,
           size: page?.size,
           sort: page?.sort,
@@ -121,15 +129,13 @@ export const complianceReportsApi = {
       "/api/v1/identity/compliance/reports/login-activity",
       {
         query: {
-          ...(range as Record<string, string | undefined>),
+          ...reportRangeQuery(range),
           page: page?.page,
           size: page?.size,
           sort: page?.sort,
         },
       },
     ),
-  sodViolations: (range: ReportDateRange) =>
-    api.get<SodViolationEntry[]>("/api/v1/identity/compliance/reports/sod-violations", {
-      query: range as Record<string, string | undefined>,
-    }),
+  sodViolations: () =>
+    api.get<SodViolationEntry[]>("/api/v1/identity/compliance/reports/sod-violations"),
 };

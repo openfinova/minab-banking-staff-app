@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DateInput } from "@/components/ui/date-input";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useToast } from "@/components/ui/use-toast";
@@ -155,14 +155,16 @@ function AccountStatementsContent() {
             <CardDescription>Build PDF/print data for any from–to window you select.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="st-from">From</Label>
-              <DateInput id="st-from" value={fromDate} onChange={setFromDate} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="st-to">To</Label>
-              <DateInput id="st-to" value={toDate} onChange={setToDate} />
-            </div>
+            <DateRangeFilter
+              startDate={fromDate}
+              endDate={toDate}
+              startLabel="From"
+              endLabel="To"
+              onChange={({ startDate, endDate }) => {
+                setFromDate(startDate);
+                setToDate(endDate);
+              }}
+            />
             <Button
               type="button"
               disabled={customRange.isPending || !fromDate || !toDate}

@@ -30,6 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { CustomerPartyLink } from "@/components/customers/customer-party-link";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
@@ -273,6 +274,7 @@ function LinkedCustomersTable({
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>UUID</TableHead>
           <TableHead>Customer</TableHead>
           <TableHead>Relationship type</TableHead>
           <TableHead>Beneficiary</TableHead>
@@ -352,9 +354,15 @@ function LinkedCustomerRow({
   return (
     <TableRow>
       <TableCell>
+        <CopyableUuid value={r.id} />
+      </TableCell>
+      <TableCell>
         <div className="flex max-w-[18rem] flex-col gap-1">
           <CustomerPartyLink profileUserId={r.userProfileId} />
-          <span className="break-all font-mono text-[10px] text-muted-foreground">{r.userProfileId}</span>
+          <CopyableUuid
+            value={r.userProfileId}
+            href={`/identity/users/${r.userProfileId}`}
+          />
           {matchesAccountPrimary ? (
             <Badge variant="secondary" className="w-fit whitespace-normal text-left text-[10px] font-normal leading-snug">
               Same profile as Summary primary

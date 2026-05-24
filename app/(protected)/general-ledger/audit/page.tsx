@@ -5,7 +5,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
@@ -22,6 +23,7 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { describeApiError } from "@/lib/api/errors";
 import { glAuditApi, type GlAuditTrailDto } from "@/lib/api/modules/operations";
 import { Permissions } from "@/lib/rbac/permissions";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import type { UseQueryResult } from "@tanstack/react-query";
 
@@ -83,7 +85,7 @@ function GlAuditContent() {
               <div className="flex flex-wrap items-end gap-2">
                 <div className="space-y-1.5">
                   <Label className="text-xs uppercase text-muted-foreground">Date</Label>
-                  <Input type="date" value={recentDate} onChange={(e) => setRecentDate(e.target.value)} />
+                  <DateInput value={recentDate} onChange={setRecentDate} />
                 </div>
                 <Button type="button" onClick={() => setRecentSubmitted(recentDate)}>
                   Load
@@ -102,8 +104,14 @@ function GlAuditContent() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-end gap-2">
-                <Field label="Start" value={revStart} onChange={setRevStart} />
-                <Field label="End" value={revEnd} onChange={setRevEnd} />
+              <DateRangeFilter
+                startDate={revStart}
+                endDate={revEnd}
+                onChange={({ startDate, endDate }) => {
+                  setRevStart(startDate);
+                  setRevEnd(endDate);
+                }}
+              />
                 <Button type="button" onClick={() => setRevSubmitted({ start: revStart, end: revEnd })}>
                   Load
                 </Button>
@@ -121,8 +129,14 @@ function GlAuditContent() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-end gap-2">
-                <Field label="Start" value={riskStart} onChange={setRiskStart} />
-                <Field label="End" value={riskEnd} onChange={setRiskEnd} />
+              <DateRangeFilter
+                startDate={riskStart}
+                endDate={riskEnd}
+                onChange={({ startDate, endDate }) => {
+                  setRiskStart(startDate);
+                  setRiskEnd(endDate);
+                }}
+              />
                 <Button type="button" onClick={() => setRiskSubmitted({ start: riskStart, end: riskEnd })}>
                   Load
                 </Button>
@@ -132,15 +146,6 @@ function GlAuditContent() {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
-  );
-}
-
-function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs uppercase text-muted-foreground">{label}</Label>
-      <Input type="date" value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
@@ -182,7 +187,9 @@ function AuditTable({
               </TableCell>
               <TableCell className="text-xs">
                 {r.entityType ?? "—"}{" "}
-                {r.entityId ? <span className="font-mono">({String(r.entityId).slice(0, 8)}…)</span> : null}
+                {r.entityId ? (
+                  <CopyableUuid value={String(r.entityId)} className="inline-flex" />
+                ) : null}
               </TableCell>
               <TableCell className="max-w-xs truncate text-xs">{r.reason ?? "—"}</TableCell>
             </TableRow>

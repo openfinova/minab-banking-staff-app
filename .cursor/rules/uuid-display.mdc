@@ -1,0 +1,41 @@
+---
+description: UUID columns in entity lists and copy-to-clipboard for every UUID display
+globs: app/**/*.tsx,components/**/*.tsx
+alwaysApply: false
+---
+
+# UUID display
+
+## Entity lists
+
+Every table or list that renders domain entities must include a **UUID** column for the row's primary id (`id`, `userId`, etc.), typically as the first data column.
+
+Use `CopyableUuid` from `@/components/data/copyable-uuid`.
+
+```tsx
+// ✅ GOOD — directory list
+<TableHead>UUID</TableHead>
+<TableCell>
+  <CopyableUuid value={row.id} href={`/customers/${row.id}`} stopPropagation />
+</TableCell>
+```
+
+## Copy icon
+
+Wherever a UUID is shown (lists, detail headers, audit rows, foreign-key references), render it with `CopyableUuid` so a copy icon sits beside the value and writes the full UUID to the clipboard.
+
+```tsx
+// ❌ BAD — truncated id, no copy
+<span className="font-mono text-xs">{row.id.slice(0, 8)}…</span>
+
+// ✅ GOOD
+<CopyableUuid value={row.id} href={`/accounts/${row.id}`} />
+```
+
+## Props
+
+- `truncate` (default `true`) — short label; full value on `title` and clipboard.
+- `href` — optional detail-page link on the label.
+- `stopPropagation` — use inside clickable table rows.
+
+Do not add a separate copy control when `CopyableUuid` is already used.

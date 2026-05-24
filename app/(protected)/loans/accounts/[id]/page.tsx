@@ -9,6 +9,7 @@ import { Can } from "@/components/rbac/can";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -230,7 +231,7 @@ function AccountDetail() {
           <Can permissions={[Permissions.LoanDisburse]}>
             <div className="space-y-3 rounded-md border p-3">
               <h4 className="font-medium">Disburse</h4>
-              <Input type="date" value={disbDate} onChange={(e) => setDisbDate(e.target.value)} />
+              <DateInput value={disbDate} onChange={setDisbDate} />
               <Button size="sm" disabled={disburse.isPending} onClick={() => disburse.mutate()}>
                 Record disbursement
               </Button>
@@ -239,7 +240,7 @@ function AccountDetail() {
 
           <div className="space-y-3 rounded-md border p-3">
             <h4 className="font-medium">Close</h4>
-            <Input type="date" value={closeDate} onChange={(e) => setCloseDate(e.target.value)} />
+            <DateInput value={closeDate} onChange={setCloseDate} />
             <Button size="sm" variant="secondary" disabled={close.isPending} onClick={() => close.mutate()}>
               Close loan
             </Button>
@@ -254,7 +255,7 @@ function AccountDetail() {
           <Can permissions={[Permissions.LoanWriteOff]}>
             <div className="space-y-3 rounded-md border p-3">
               <h4 className="font-medium">Write-off</h4>
-              <Input type="date" value={woDate} onChange={(e) => setWoDate(e.target.value)} />
+              <DateInput value={woDate} onChange={setWoDate} />
               <Input placeholder="Reason" value={woReason} onChange={(e) => setWoReason(e.target.value)} />
               <Button size="sm" variant="destructive" disabled={writeOff.isPending} onClick={() => writeOff.mutate()}>
                 Write off
@@ -273,7 +274,7 @@ function AccountDetail() {
           <Can permissions={[Permissions.LoanRestructure]}>
             <div className="space-y-3 rounded-md border p-3">
               <h4 className="font-medium">Mark restructured</h4>
-              <Input type="date" value={restructuredDate} onChange={(e) => setRestructuredDate(e.target.value)} />
+              <DateInput value={restructuredDate} onChange={setRestructuredDate} />
               <Button size="sm" disabled={markR.isPending} onClick={() => markR.mutate()}>
                 Mark
               </Button>

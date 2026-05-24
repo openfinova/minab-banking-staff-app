@@ -6,8 +6,7 @@ import { PauseCircle, PlayCircle, CheckCircle, RefreshCw, SkipForward, Workflow 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,6 +25,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { StatusBadge } from "@/components/data/status-badge";
 import { Can } from "@/components/rbac/can";
@@ -133,14 +133,16 @@ function CompensationWorkflowsContent() {
           <CardDescription>Open the compensation workflow backlog and throughput summary.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
-          <div>
-            <Label>Start</Label>
-            <Input type="date" value={rs} onChange={(e) => setRs(e.target.value)} />
-          </div>
-          <div>
-            <Label>End</Label>
-            <Input type="date" value={re} onChange={(e) => setRe(e.target.value)} />
-          </div>
+          <DateRangeFilter
+            startDate={rs}
+            endDate={re}
+            startLabel="Start"
+            endLabel="End"
+            onChange={({ startDate, endDate }) => {
+              setRs(startDate);
+              setRe(endDate);
+            }}
+          />
         </CardContent>
       </Card>
       <div className="grid gap-4 md:grid-cols-3">
@@ -274,7 +276,7 @@ function WorkflowsTable({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Workflow</TableHead>
+                <TableHead>UUID</TableHead>
                 <TableHead>Transaction</TableHead>
                 <TableHead>Steps</TableHead>
                 <TableHead>Status</TableHead>
@@ -287,8 +289,19 @@ function WorkflowsTable({
                 const wid = workflowKey(wf);
                 return (
                   <TableRow key={wid}>
-                    <TableCell className="font-mono text-xs">{wid}</TableCell>
-                    <TableCell className="font-mono text-xs">{wf.transactionId ?? "—"}</TableCell>
+                    <TableCell>
+                      <CopyableUuid value={wid} />
+                    </TableCell>
+                    <TableCell>
+                      <CopyableUuid
+                        value={wf.transactionId}
+                        href={
+                          wf.transactionId
+                            ? `/transaction-processing/transactions/${wf.transactionId}`
+                            : undefined
+                        }
+                      />
+                    </TableCell>
                     <TableCell>
                       {wf.completedSteps ?? 0}/{wf.totalSteps ?? 0}
                       {typeof wf.failedSteps === "number" && wf.failedSteps > 0 ? (
@@ -361,7 +374,9 @@ function StepsDialog({
       </DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Steps — {workflowId.slice(0, 8)}…</DialogTitle>
+          <DialogTitle>
+            Steps — <CopyableUuid value={workflowId} truncate />
+          </DialogTitle>
         </DialogHeader>
         {q.isLoading ? (
           <Skeleton className="h-24 w-full" />

@@ -6,6 +6,7 @@ import { Permissions } from "@/lib/rbac/permissions";
 import { exchangeApi, type RateType } from "@/lib/api/modules/exchange";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -68,7 +69,7 @@ function Content() {
           <RateTypeSelect value={rateType} onChange={setRateType} label="Rate type" />
           <div className="space-y-1.5">
             <Label className="text-xs uppercase text-muted-foreground">Date</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <DateInput value={date} onChange={setDate} />
           </div>
           <Button type="button" onClick={check}>
             Check

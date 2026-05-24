@@ -3,6 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/data/status-badge";
@@ -44,11 +45,7 @@ export function CustomerPartyLink({
     return <Skeleton className="inline-block h-4 w-36 align-middle" />;
   }
   if (q.isError) {
-    return (
-      <span className={`text-xs text-destructive ${className ?? ""}`} title={describeApiError(q.error)}>
-        {id}
-      </span>
-    );
+    return <CopyableUuid value={id} className={className} />;
   }
   if (q.data) {
     const c = q.data;
@@ -59,11 +56,7 @@ export function CustomerPartyLink({
       </Link>
     );
   }
-  return (
-    <span className={`font-mono text-xs ${className ?? ""}`} title="No customer row matched this id search">
-      {id}
-    </span>
-  );
+  return <CopyableUuid value={id} className={className} />;
 }
 
 /** Summary card: name, number, type, status, KYC, profile id, link to customer. */
@@ -88,7 +81,7 @@ export function CustomerPartySummaryBlock({ profileUserId }: { profileUserId?: s
     return (
       <div className="rounded-md border border-dashed bg-muted/20 p-3 text-sm">
         <p className="text-xs text-muted-foreground">No customer row matches this identity / profile id.</p>
-        <p className="mt-1 break-all font-mono text-[10px] text-muted-foreground">{id}</p>
+        <CopyableUuid value={id} className="mt-1 text-muted-foreground" truncate={false} />
       </div>
     );
   }
@@ -108,7 +101,7 @@ export function CustomerPartySummaryBlock({ profileUserId }: { profileUserId?: s
               <span className="text-xs text-muted-foreground">KYC {c.kycStatus}</span>
             ) : null}
           </div>
-          <p className="break-all pt-1 font-mono text-[10px] text-muted-foreground">{id}</p>
+          <CopyableUuid value={id} className="pt-1 text-muted-foreground" truncate={false} />
         </div>
         <Button variant="secondary" size="sm" asChild>
           <Link href={`/customers/${c.id}`}>Customer profile</Link>

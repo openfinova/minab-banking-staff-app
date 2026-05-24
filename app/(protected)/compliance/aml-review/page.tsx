@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { describeApiError } from "@/lib/api/errors";
 import { glSuspenseApi } from "@/lib/api/modules/operations";
@@ -85,6 +86,7 @@ function AmlReviewContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Rule</TableHead>
                   <TableHead>Severity</TableHead>
                   <TableHead>Amount</TableHead>
@@ -97,22 +99,19 @@ function AmlReviewContent() {
               <TableBody>
                 {qAlerts.data.content.map((row) => (
                   <TableRow key={row.id}>
+                    <TableCell>
+                      <CopyableUuid value={row.id} />
+                    </TableCell>
                     <TableCell className="font-mono text-xs">{row.ruleCode ?? "—"}</TableCell>
                     <TableCell>
                       <StatusBadge status={String(row.severity ?? "")} />
                     </TableCell>
                     <TableCell>{formatMoney(row.amount, row.currency)}</TableCell>
                     <TableCell className="text-xs">
-                      {row.accountId ? (
-                        <Link
-                          href={`/accounts/${encodeURIComponent(row.accountId)}`}
-                          className="text-primary hover:underline font-mono"
-                        >
-                          {row.accountId.slice(0, 8)}…
-                        </Link>
-                      ) : (
-                        "—"
-                      )}
+                      <CopyableUuid
+                        value={row.accountId}
+                        href={row.accountId ? `/accounts/${encodeURIComponent(row.accountId)}` : undefined}
+                      />
                     </TableCell>
                     <TableCell className="text-xs">{row.investigationHoldPlaced ? "Yes" : "—"}</TableCell>
                     <TableCell className="text-xs">{row.createdAt ? String(row.createdAt) : "—"}</TableCell>
@@ -146,6 +145,7 @@ function AmlReviewContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Reference</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
@@ -157,7 +157,10 @@ function AmlReviewContent() {
               <TableBody>
                 {qSuspense.data.map((row) => (
                   <TableRow key={row.id}>
-                    <TableCell className="font-mono text-xs">{row.transactionReference ?? row.id}</TableCell>
+                    <TableCell>
+                      <CopyableUuid value={row.id} />
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{row.transactionReference ?? "—"}</TableCell>
                     <TableCell>{formatMoney(row.amount, row.currency)}</TableCell>
                     <TableCell>
                       <StatusBadge status={String(row.status ?? "")} />

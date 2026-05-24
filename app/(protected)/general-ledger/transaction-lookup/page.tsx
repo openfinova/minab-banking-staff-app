@@ -14,6 +14,7 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { describeApiError } from "@/lib/api/errors";
 import { glTransactionsApi } from "@/lib/api/modules/operations";
 import { Permissions } from "@/lib/rbac/permissions";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 
 export default function TransactionLookupPage() {
@@ -124,7 +125,12 @@ function TransactionLookupContent() {
             <EmptyState title="Unknown" />
           ) : (
             <div className="grid gap-2 text-sm">
-              <Row label="ID" value={<span className="font-mono text-xs">{data.id}</span>} />
+              <Row
+                label="ID"
+                value={
+                  <CopyableUuid value={data.id} truncate={false} />
+                }
+              />
               <Row label="Reference" value={data.referenceId ?? "—"} />
               <Row label="Status">
                 <StatusBadge status={data.status ?? "?"} />

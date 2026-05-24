@@ -35,6 +35,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -281,6 +282,7 @@ function CustomerAddressesContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Lines</TableHead>
                   <TableHead>City</TableHead>
@@ -291,6 +293,9 @@ function CustomerAddressesContent() {
               <TableBody>
                 {list.data.map((a) => (
                   <TableRow key={a.id}>
+                    <TableCell>
+                      <CopyableUuid value={a.id} />
+                    </TableCell>
                     <TableCell>{a.type}</TableCell>
                     <TableCell className="max-w-xs">
                       <div className="text-sm">{a.line1}</div>

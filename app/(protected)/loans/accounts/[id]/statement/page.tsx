@@ -7,8 +7,7 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { LoanServicingLinks } from "@/components/loans/loan-servicing-links";
 import { describeApiError } from "@/lib/api/errors";
 import { loanAccountsApi } from "@/lib/api/modules/loans";
@@ -40,14 +39,16 @@ function StatementContent() {
       <LoanServicingLinks loanAccountId={id} />
       <Card>
         <CardContent className="pt-6 flex flex-wrap items-end gap-3">
-          <div className="grid gap-1.5">
-            <Label>From</Label>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-          </div>
-          <div className="grid gap-1.5">
-            <Label>To</Label>
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-          </div>
+          <DateRangeFilter
+            startDate={from}
+            endDate={to}
+            startLabel="From"
+            endLabel="To"
+            onChange={({ startDate, endDate }) => {
+              setFrom(startDate);
+              setTo(endDate);
+            }}
+          />
           <Button type="button" disabled={!from || !to} onClick={() => stmt.refetch()}>
             Generate
           </Button>

@@ -10,6 +10,7 @@ import { Can } from "@/components/rbac/can";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateTimeInput } from "@/components/ui/datetime-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,6 +23,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
@@ -197,12 +199,11 @@ function AccountHoldsContent() {
               <Input id="hold-reason" value={reason} onChange={(e) => setReason(e.target.value)} />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="hold-exp">Expires (optional, datetime local)</Label>
-              <Input
+              <Label htmlFor="hold-exp">Expires (optional)</Label>
+              <DateTimeInput
                 id="hold-exp"
-                type="datetime-local"
                 value={expiresAt}
-                onChange={(e) => setExpiresAt(e.target.value)}
+                onChange={setExpiresAt}
               />
             </div>
             <Button
@@ -232,6 +233,7 @@ function AccountHoldsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
                   <TableHead>Reason</TableHead>
@@ -242,6 +244,9 @@ function AccountHoldsContent() {
               <TableBody>
                 {rows.map((h) => (
                   <TableRow key={h.id}>
+                    <TableCell>
+                      <CopyableUuid value={h.id} />
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={h.status} />
                     </TableCell>

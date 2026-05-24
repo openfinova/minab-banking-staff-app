@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { DateTimeRangeFilter } from "@/components/ui/datetime-range-filter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Pagination } from "@/components/data/pagination";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -75,60 +77,53 @@ function AuditContent() {
         description="Search system-wide security audit entries. Pick a user from suggestions (UUID filter) or enter a username for an exact match, plus event type, IP, and time window."
       />
       <Card>
-        <CardContent className="grid items-end gap-3 pt-6 md:grid-cols-3 lg:grid-cols-6">
-          <StaffUserField
-            id="audit-user-filter"
-            label="User"
-            suggestionSource="audit"
-            className="md:col-span-2"
-            labelClassName="text-xs uppercase tracking-wide text-muted-foreground"
-            inputClassName="font-mono text-xs"
-            value={userFilter}
-            onChange={setUserFilter}
+        <CardContent className="space-y-4 pt-6">
+          <div className="grid items-end gap-3 md:grid-cols-2 lg:grid-cols-4">
+            <StaffUserField
+              id="audit-user-filter"
+              label="User"
+              suggestionSource="audit"
+              className="md:col-span-2"
+              labelClassName="text-xs uppercase tracking-wide text-muted-foreground"
+              inputClassName="font-mono text-xs"
+              value={userFilter}
+              onChange={setUserFilter}
+            />
+            <Field label="Event type">
+              <Select
+                value={draft.eventType ?? "__ANY__"}
+                onValueChange={(v) =>
+                  setDraft({ ...draft, eventType: v === "__ANY__" ? undefined : v })
+                }
+                disabled={eventTypesQuery.isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Any event type" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[min(24rem,70vh)]">
+                  <SelectItem value="__ANY__">Any</SelectItem>
+                  {(eventTypesQuery.data ?? []).map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="IP address">
+              <Input
+                className="font-mono text-xs"
+                value={draft.ipAddress ?? ""}
+                onChange={(e) => setDraft({ ...draft, ipAddress: e.target.value })}
+              />
+            </Field>
+          </div>
+          <DateTimeRangeFilter
+            from={draft.from ?? ""}
+            to={draft.to ?? ""}
+            onChange={({ from, to }) => setDraft({ ...draft, from, to })}
           />
-          <Field label="Event type">
-            <Select
-              value={draft.eventType ?? "__ANY__"}
-              onValueChange={(v) =>
-                setDraft({ ...draft, eventType: v === "__ANY__" ? undefined : v })
-              }
-              disabled={eventTypesQuery.isLoading}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Any event type" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[min(24rem,70vh)]">
-                <SelectItem value="__ANY__">Any</SelectItem>
-                {(eventTypesQuery.data ?? []).map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="IP address">
-            <Input
-              className="font-mono text-xs"
-              value={draft.ipAddress ?? ""}
-              onChange={(e) => setDraft({ ...draft, ipAddress: e.target.value })}
-            />
-          </Field>
-          <Field label="From">
-            <Input
-              type="datetime-local"
-              value={draft.from ?? ""}
-              onChange={(e) => setDraft({ ...draft, from: e.target.value })}
-            />
-          </Field>
-          <Field label="To">
-            <Input
-              type="datetime-local"
-              value={draft.to ?? ""}
-              onChange={(e) => setDraft({ ...draft, to: e.target.value })}
-            />
-          </Field>
-          <div className="md:col-span-3 lg:col-span-6 flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={() => {
                 const u = userFilterToQuery(userFilter);
@@ -181,7 +176,10 @@ function AuditContent() {
                       <TableCell className="text-xs">
                         {event.username ?? "-"}
                         {event.userId ? (
-                          <div className="font-mono text-muted-foreground">{event.userId}</div>
+                          <CopyableUuid
+                            value={event.userId}
+                            href={`/identity/users/${event.userId}`}
+                          />
                         ) : null}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">

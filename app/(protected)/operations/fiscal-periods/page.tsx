@@ -8,6 +8,7 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { StatusBadge } from "@/components/data/status-badge";
 import { Can } from "@/components/rbac/can";
@@ -130,6 +132,7 @@ function FiscalPeriodsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Year</TableHead>
                   <TableHead>Period #</TableHead>
@@ -142,6 +145,9 @@ function FiscalPeriodsContent() {
               <TableBody>
                 {list.data.map((p) => (
                   <TableRow key={p.id}>
+                    <TableCell>
+                      <CopyableUuid value={p.id} />
+                    </TableCell>
                     <TableCell>{p.name}</TableCell>
                     <TableCell>{p.fiscalYear}</TableCell>
                     <TableCell>{p.periodNumber}</TableCell>
@@ -292,10 +298,10 @@ function NewFiscalPeriodDialog() {
             />
           </Field>
           <Field label="Start date" error={form.formState.errors.startDate?.message}>
-            <Input type="date" {...form.register("startDate")} />
+            <DateInput value={form.watch("startDate") ?? ""} onChange={(v) => form.setValue("startDate", v, { shouldValidate: true })} />
           </Field>
           <Field label="End date" error={form.formState.errors.endDate?.message}>
-            <Input type="date" {...form.register("endDate")} />
+            <DateInput value={form.watch("endDate") ?? ""} onChange={(v) => form.setValue("endDate", v, { shouldValidate: true })} />
           </Field>
           <DialogFooter className="md:col-span-2">
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>

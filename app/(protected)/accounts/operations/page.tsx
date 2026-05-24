@@ -25,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { DateInput } from "@/components/ui/date-input";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
@@ -429,14 +430,16 @@ function BatchResultsTable({ result }: { result: BatchResult | undefined }) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Account id</TableHead>
+            <TableHead>Account UUID</TableHead>
             <TableHead>Result</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {entries.map(([id, v]) => (
             <TableRow key={id}>
-              <TableCell className="font-mono text-xs">{id}</TableCell>
+              <TableCell>
+                <CopyableUuid value={id} href={`/accounts/${id}`} />
+              </TableCell>
               <TableCell className={v === "SUCCESS" ? "text-emerald-600" : "text-destructive"}>{v}</TableCell>
             </TableRow>
           ))}

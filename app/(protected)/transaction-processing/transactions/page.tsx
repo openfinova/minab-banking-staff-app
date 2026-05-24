@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
@@ -37,6 +37,7 @@ import { AccountResolveField } from "@/components/accounts/account-resolve-field
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { Can } from "@/components/rbac/can";
 import { StatusBadge } from "@/components/data/status-badge";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import {
@@ -332,13 +333,17 @@ function TpTransactionsContent() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label>From date</Label>
-            <Input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>To date</Label>
-            <Input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
+          <div className="md:col-span-2 lg:col-span-3">
+            <DateRangeFilter
+              startDate={fromDate}
+              endDate={toDate}
+              startLabel="From date"
+              endLabel="To date"
+              onChange={({ startDate, endDate }) => {
+                setFromDate(startDate);
+                setToDate(endDate);
+              }}
+            />
           </div>
           <div className="space-y-1.5">
             <Label>Settlement currency (ISO)</Label>
@@ -386,7 +391,7 @@ function TpTransactionsContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Id</TableHead>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Amount</TableHead>
@@ -397,17 +402,11 @@ function TpTransactionsContent() {
                 <TableBody>
                   {list.data.content.map((row) => (
                     <TableRow key={row.id}>
-                      <TableCell className="font-mono text-xs">
-                        {row.id ? (
-                          <Link
-                            className="text-primary underline"
-                            href={`/transaction-processing/transactions/${row.id}`}
-                          >
-                            {row.id.slice(0, 8)}…
-                          </Link>
-                        ) : (
-                          "—"
-                        )}
+                      <TableCell>
+                        <CopyableUuid
+                          value={row.id}
+                          href={`/transaction-processing/transactions/${row.id}`}
+                        />
                       </TableCell>
                       <TableCell>{row.type}</TableCell>
                       <TableCell>

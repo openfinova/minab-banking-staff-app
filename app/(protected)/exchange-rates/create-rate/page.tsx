@@ -6,6 +6,7 @@ import { Permissions } from "@/lib/rbac/permissions";
 import { exchangeApi, type ExchangeRateRequestBody, type RateType } from "@/lib/api/modules/exchange";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -120,10 +121,9 @@ function Content() {
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs uppercase text-muted-foreground">Rate date</Label>
-              <Input
-                type="date"
+              <DateInput
                 value={form.rateDate}
-                onChange={(e) => setForm((f) => ({ ...f, rateDate: e.target.value }))}
+                onChange={(v) => setForm((f) => ({ ...f, rateDate: v }))}
               />
             </div>
             <RateTypeSelect value={form.rateType} onChange={setRateType} label="Rate type" />

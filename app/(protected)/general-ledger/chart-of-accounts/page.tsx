@@ -31,6 +31,7 @@ import {
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { useToast } from "@/components/ui/use-toast";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { describeApiError } from "@/lib/api/errors";
 import { glAccountsApi, glSetupApi } from "@/lib/api/modules/operations";
@@ -156,6 +157,7 @@ function ChartOfAccountsContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Code</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
@@ -167,6 +169,9 @@ function ChartOfAccountsContent() {
                 <TableBody>
                   {(list.data?.content ?? []).map((a) => (
                     <TableRow key={a.id}>
+                      <TableCell>
+                        <CopyableUuid value={a.id} />
+                      </TableCell>
                       <TableCell className="font-mono text-xs">{a.code}</TableCell>
                       <TableCell>{a.name}</TableCell>
                       <TableCell>{a.type}</TableCell>

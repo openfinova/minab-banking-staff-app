@@ -35,6 +35,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
@@ -223,6 +224,7 @@ function CustomerRelationshipsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Related customer</TableHead>
                   <TableHead>Active</TableHead>
@@ -234,12 +236,13 @@ function CustomerRelationshipsContent() {
                   const oid = otherCustomerId(r, customerId);
                   return (
                   <TableRow key={r.id}>
+                    <TableCell>
+                      <CopyableUuid value={r.id} />
+                    </TableCell>
                     <TableCell>{r.relationshipType}</TableCell>
-                    <TableCell className="font-mono text-xs">
+                    <TableCell>
                       {oid !== "—" ? (
-                        <Link className="text-primary underline" href={`/customers/${oid}`}>
-                          {oid}
-                        </Link>
+                        <CopyableUuid value={oid} href={`/customers/${oid}`} />
                       ) : (
                         "—"
                       )}

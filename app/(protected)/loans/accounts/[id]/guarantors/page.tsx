@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { LoanServicingLinks } from "@/components/loans/loan-servicing-links";
 import { StatusBadge } from "@/components/data/status-badge";
 import { describeApiError } from "@/lib/api/errors";
@@ -132,9 +133,15 @@ function GuarantorRow({
   const [remReas, setRemReas] = React.useState("");
   return (
     <div className="border rounded p-3 text-sm space-y-2">
-      <div className="font-mono text-[10px]">{g.id}</div>
+      <CopyableUuid value={g.id} />
       <div>
-        customer {g.customerId} amt {g.guaranteedAmount}{" "}
+        customer{" "}
+        {g.customerId ? (
+          <CopyableUuid value={g.customerId} href={`/customers/${g.customerId}`} />
+        ) : (
+          "—"
+        )}{" "}
+        amt {g.guaranteedAmount}{" "}
         {g.status ? <StatusBadge status={g.status} /> : null}
       </div>
       <div className="flex flex-wrap gap-1">

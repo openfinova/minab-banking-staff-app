@@ -33,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ConfirmAction } from "@/components/data/confirm-action";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
@@ -92,6 +93,7 @@ function RolesContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className="max-w-[280px]">Permissions</TableHead>
@@ -102,6 +104,9 @@ function RolesContent() {
               <TableBody>
                 {data.map((role) => (
                   <TableRow key={role.id}>
+                    <TableCell>
+                      <CopyableUuid value={role.id} href={`/identity/roles/${role.id}`} />
+                    </TableCell>
                     <TableCell>
                       <Link
                         href={`/identity/roles/${role.id}`}

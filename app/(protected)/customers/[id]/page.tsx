@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { CustomerServicingLinks } from "@/components/customers/customer-servicing-links";
@@ -257,6 +258,7 @@ function CustomerDetailContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Number</TableHead>
                   <TableHead>Product</TableHead>
                   <TableHead>Status</TableHead>
@@ -266,6 +268,9 @@ function CustomerDetailContent() {
               <TableBody>
                 {(linkedAccounts.data?.content ?? []).map((a) => (
                   <TableRow key={a.id}>
+                    <TableCell>
+                      <CopyableUuid value={a.id} href={`/accounts/${a.id}`} />
+                    </TableCell>
                     <TableCell className="font-mono text-xs">
                       <Link href={`/accounts/${a.id}`} className="text-primary hover:underline">
                         {a.accountNumber}

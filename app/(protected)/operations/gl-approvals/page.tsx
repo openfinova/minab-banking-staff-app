@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
 import { glApprovalsApi, type GlApprovalQueueItem } from "@/lib/api/modules/operations";
@@ -134,7 +135,11 @@ function GlApprovalsContent() {
         description={
           approveFor ? (
             <span className="text-sm">
-              Transaction <span className="font-mono">{approveFor.transactionId}</span>
+              Transaction{" "}
+              <CopyableUuid
+                value={approveFor.transactionId}
+                href={`/transaction-processing/transactions/${approveFor.transactionId}`}
+              />
               {approveFor.transactionRef ? ` (${approveFor.transactionRef})` : ""} — maker-checker rules still apply until the
               final required signature posts the batch.
             </span>
@@ -270,7 +275,12 @@ function ApprovalRow({
 
   return (
     <TableRow>
-      <TableCell className="font-mono text-xs">{item.transactionId}</TableCell>
+      <TableCell>
+        <CopyableUuid
+          value={item.transactionId}
+          href={`/transaction-processing/transactions/${item.transactionId}`}
+        />
+      </TableCell>
       <TableCell>{item.transactionRef ?? "—"}</TableCell>
       <TableCell>
         {item.amount !== undefined ? formatCurrency(item.amount, item.currency ?? undefined) : "—"}

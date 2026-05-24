@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { describeApiError } from "@/lib/api/errors";
 import { loanProductsApi, type LoanProductResponse } from "@/lib/api/modules/loans";
 import { Permissions } from "@/lib/rbac/permissions";
@@ -71,6 +72,7 @@ function SearchContent() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>UUID</TableHead>
                 <TableHead>Code</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
@@ -80,6 +82,9 @@ function SearchContent() {
             <TableBody>
               {(search.data as LoanProductResponse[]).map((p) => (
                 <TableRow key={p.id}>
+                  <TableCell>
+                    <CopyableUuid value={p.id} href={`/loans/products/${p.id}`} />
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{p.productCode}</TableCell>
                   <TableCell>{p.productName}</TableCell>
                   <TableCell>{p.productType}</TableCell>

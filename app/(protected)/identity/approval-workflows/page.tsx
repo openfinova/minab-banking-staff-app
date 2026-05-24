@@ -34,6 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Can } from "@/components/rbac/can";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { StatusBadge } from "@/components/data/status-badge";
@@ -158,6 +159,7 @@ function ApprovalWorkflowsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Resource ID</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Required roles</TableHead>
@@ -239,12 +241,12 @@ function WorkflowDetailBody({ wf }: { wf: ApprovalWorkflow }) {
     <div className="space-y-3 text-sm">
       <div className="grid gap-1">
         <span className="text-muted-foreground">ID</span>
-        <span className="font-mono text-xs break-all">{wf.id}</span>
+        <CopyableUuid value={wf.id} truncate={false} />
       </div>
       <div className="grid gap-1">
         <span className="text-muted-foreground">Resource</span>
         <span>
-          {wf.resourceType} / <span className="font-mono text-xs">{wf.resourceId}</span>
+          {wf.resourceType} / <CopyableUuid value={wf.resourceId} />
         </span>
       </div>
       <div className="flex items-center gap-2">
@@ -261,7 +263,13 @@ function WorkflowDetailBody({ wf }: { wf: ApprovalWorkflow }) {
                 <StatusBadge status={s.status} />
               </div>
               {s.actorUserId ? (
-                <div className="font-mono text-muted-foreground">Actor {s.actorUserId}</div>
+                <div className="text-muted-foreground">
+                  Actor{" "}
+                  <CopyableUuid
+                    value={s.actorUserId}
+                    href={`/identity/users/${s.actorUserId}`}
+                  />
+                </div>
               ) : null}
               {s.comment ? <div className="text-muted-foreground">{s.comment}</div> : null}
               {s.decidedAt ? (
@@ -401,7 +409,12 @@ function ApprovalRow({
 }) {
   return (
     <TableRow>
-      <TableCell className="font-mono text-xs">{wf.resourceId}</TableCell>
+      <TableCell>
+        <CopyableUuid value={wf.id} />
+      </TableCell>
+      <TableCell>
+        <CopyableUuid value={wf.resourceId} />
+      </TableCell>
       <TableCell>
         <StatusBadge status={wf.status} />
       </TableCell>

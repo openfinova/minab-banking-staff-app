@@ -17,11 +17,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Pagination } from "@/components/data/pagination";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { DateTimeRangeFilter } from "@/components/ui/datetime-range-filter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -52,36 +54,29 @@ function MyAuditContent() {
         description="Security audit entries recorded for your user (same model as the admin audit API, scoped to you)."
       />
       <Card>
-        <CardContent className="grid gap-3 pt-6 md:grid-cols-2 lg:grid-cols-4">
-          <Field label="Event type">
-            <Input
-              value={draft.eventType ?? ""}
-              onChange={(e) => setDraft({ ...draft, eventType: e.target.value })}
-              placeholder="LOGIN_SUCCESS"
-            />
-          </Field>
-          <Field label="IP address">
-            <Input
-              className="font-mono text-xs"
-              value={draft.ipAddress ?? ""}
-              onChange={(e) => setDraft({ ...draft, ipAddress: e.target.value })}
-            />
-          </Field>
-          <Field label="From">
-            <Input
-              type="datetime-local"
-              value={draft.from ?? ""}
-              onChange={(e) => setDraft({ ...draft, from: e.target.value })}
-            />
-          </Field>
-          <Field label="To">
-            <Input
-              type="datetime-local"
-              value={draft.to ?? ""}
-              onChange={(e) => setDraft({ ...draft, to: e.target.value })}
-            />
-          </Field>
-          <div className="md:col-span-2 lg:col-span-4 flex flex-wrap gap-2">
+        <CardContent className="space-y-4 pt-6">
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="Event type">
+              <Input
+                value={draft.eventType ?? ""}
+                onChange={(e) => setDraft({ ...draft, eventType: e.target.value })}
+                placeholder="LOGIN_SUCCESS"
+              />
+            </Field>
+            <Field label="IP address">
+              <Input
+                className="font-mono text-xs"
+                value={draft.ipAddress ?? ""}
+                onChange={(e) => setDraft({ ...draft, ipAddress: e.target.value })}
+              />
+            </Field>
+          </div>
+          <DateTimeRangeFilter
+            from={draft.from ?? ""}
+            to={draft.to ?? ""}
+            onChange={({ from, to }) => setDraft({ ...draft, from, to })}
+          />
+          <div className="flex flex-wrap gap-2">
             <Button
               type="button"
               size="sm"
@@ -119,6 +114,7 @@ function MyAuditContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Timestamp</TableHead>
                     <TableHead>Event</TableHead>
                     <TableHead>Details</TableHead>
@@ -128,6 +124,9 @@ function MyAuditContent() {
                 <TableBody>
                   {data.content.map((event) => (
                     <TableRow key={event.id}>
+                      <TableCell>
+                        <CopyableUuid value={event.id} />
+                      </TableCell>
                       <TableCell className="font-mono text-xs">
                         {formatDateTime(event.timestamp)}
                       </TableCell>

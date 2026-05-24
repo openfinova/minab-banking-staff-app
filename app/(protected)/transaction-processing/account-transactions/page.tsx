@@ -12,6 +12,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DateTimeRangeFilter } from "@/components/ui/datetime-range-filter";
+import { DateTimeInput } from "@/components/ui/datetime-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
@@ -24,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { useToast } from "@/components/ui/use-toast";
@@ -110,16 +113,14 @@ function AccountTxContent() {
         </CardHeader>
         <CardContent className="space-y-4">
           <AccountResolveField instanceId="acct-tx-ops" value={accountId} onChange={(id) => setAccountId(id)} />
-          <div className="grid gap-2 md:grid-cols-2">
-            <div>
-              <Label>From</Label>
-              <Input type="datetime-local" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
-            </div>
-            <div>
-              <Label>To</Label>
-              <Input type="datetime-local" value={toDate} onChange={(e) => setToDate(e.target.value)} />
-            </div>
-          </div>
+          <DateTimeRangeFilter
+            from={fromDate}
+            to={toDate}
+            onChange={({ from, to }) => {
+              setFromDate(from);
+              setToDate(to);
+            }}
+          />
           <Button
             type="button"
             onClick={() => void history.refetch()}
@@ -134,7 +135,7 @@ function AccountTxContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Id</TableHead>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>When</TableHead>
@@ -144,7 +145,12 @@ function AccountTxContent() {
                 <TableBody>
                   {history.data.content.map((tx) => (
                     <TableRow key={tx.id}>
-                      <TableCell className="font-mono text-xs">{tx.id}</TableCell>
+                      <TableCell>
+                        <CopyableUuid
+                          value={tx.id}
+                          href={tx.id ? `/transaction-processing/transactions/${tx.id}` : undefined}
+                        />
+                      </TableCell>
                       <TableCell>{tx.transactionType}</TableCell>
                       <TableCell>
                         {tx.amount != null ? String(tx.amount) : "—"} {tx.currency}
@@ -297,7 +303,7 @@ function RecordTransactionDialog({
             </div>
           </div>
           <Label>Transaction time</Label>
-          <Input type="datetime-local" value={txDate} onChange={(e) => setTxDate(e.target.value)} />
+          <DateTimeInput value={txDate} onChange={setTxDate} />
           <Label>Description</Label>
           <Input value={description} onChange={(e) => setDescription(e.target.value)} />
           <Label>Reference</Label>

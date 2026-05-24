@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { CustomerIdentityPicker } from "@/components/accounts/customer-identity-picker";
 import { DataTable } from "@/components/data/data-table";
@@ -139,6 +140,13 @@ function AccountsDirectoryContent() {
             onCheckedChange={(v) => row.toggleSelected(!!v)}
             aria-label={`Select ${row.original.accountNumber}`}
           />
+        ),
+      },
+      {
+        accessorKey: "id",
+        header: "UUID",
+        cell: ({ row }) => (
+          <CopyableUuid value={row.original.id} href={`/accounts/${row.original.id}`} />
         ),
       },
       {

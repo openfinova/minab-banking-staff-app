@@ -6,9 +6,9 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { Button } from "@/components/ui/button";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Pagination } from "@/components/data/pagination";
 import { EmptyState } from "@/components/ui/empty-state";
 import {
@@ -44,29 +44,30 @@ function ComplianceContent() {
         description="User access, permission changes, login activity, and SoD violation reports."
       />
       <Card>
-        <CardContent className="grid gap-3 pt-6 md:grid-cols-4">
-          <Field label="Start date">
-            <Input
-              type="date"
-              value={draft.startDate ?? ""}
-              onChange={(e) => setDraft({ ...draft, startDate: e.target.value })}
-            />
-          </Field>
-          <Field label="End date">
-            <Input
-              type="date"
-              value={draft.endDate ?? ""}
-              onChange={(e) => setDraft({ ...draft, endDate: e.target.value })}
-            />
-          </Field>
-          <Field label="As of date">
-            <Input
-              type="date"
-              value={draft.asOfDate ?? ""}
-              onChange={(e) => setDraft({ ...draft, asOfDate: e.target.value })}
-            />
-          </Field>
-          <div className="flex items-end gap-2">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Report filters</CardTitle>
+          <CardDescription>
+            Date range applies to <strong>Permission changes</strong> and{" "}
+            <strong>Login activity</strong>. User access is a current snapshot; SoD scans
+            present role assignments (dates ignored).
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <DateRangeFilter
+            startDate={draft.startDate ?? ""}
+            endDate={draft.endDate ?? ""}
+            startLabel="Start date"
+            endLabel="End date"
+            onChange={({ startDate, endDate }) =>
+              setDraft({ startDate, endDate })
+            }
+          />
+          {range.startDate || range.endDate ? (
+            <p className="text-xs text-muted-foreground">
+              Active range: {range.startDate ?? "…"} → {range.endDate ?? "…"}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
             <Button onClick={() => setRange(draft)}>Apply</Button>
             <Button
               variant="ghost"
@@ -89,7 +90,7 @@ function ComplianceContent() {
           <TabsTrigger value="sod">SoD violations</TabsTrigger>
         </TabsList>
         <TabsContent value="user-access">
-          <UserAccessReport range={range} />
+          <UserAccessReport />
         </TabsContent>
         <TabsContent value="permission-changes">
           <PermissionChangesReport range={range} />
@@ -98,18 +99,18 @@ function ComplianceContent() {
           <LoginActivityReport range={range} />
         </TabsContent>
         <TabsContent value="sod">
-          <SodReport range={range} />
+          <SodReport />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
 
-function UserAccessReport({ range }: { range: ReportDateRange }) {
+function UserAccessReport() {
   const [page, setPage] = React.useState(0);
   const { data, isLoading } = useQuery({
-    queryKey: ["compliance", "user-access", range, page],
-    queryFn: () => complianceReportsApi.userAccess(range, { page, size: 25 }),
+    queryKey: ["compliance", "user-access", page],
+    queryFn: () => complianceReportsApi.userAccess({ page, size: 25 }),
   });
   return (
     <Card>
@@ -125,6 +126,7 @@ function UserAccessReport({ range }: { range: ReportDateRange }) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Username</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Roles</TableHead>
@@ -135,6 +137,9 @@ function UserAccessReport({ range }: { range: ReportDateRange }) {
               <TableBody>
                 {data.content.map((row) => (
                   <TableRow key={row.userId}>
+                    <TableCell>
+                      <CopyableUuid value={row.userId} href={`/identity/users/${row.userId}`} />
+                    </TableCell>
                     <TableCell>{row.username}</TableCell>
                     <TableCell>{row.userType ?? "-"}</TableCell>
                     <TableCell>
@@ -175,6 +180,9 @@ function UserAccessReport({ range }: { range: ReportDateRange }) {
 
 function PermissionChangesReport({ range }: { range: ReportDateRange }) {
   const [page, setPage] = React.useState(0);
+  React.useEffect(() => {
+    setPage(0);
+  }, [range.startDate, range.endDate]);
   const { data, isLoading } = useQuery({
     queryKey: ["compliance", "permission-changes", range, page],
     queryFn: () => complianceReportsApi.permissionChanges(range, { page, size: 25 }),
@@ -183,7 +191,14 @@ function PermissionChangesReport({ range }: { range: ReportDateRange }) {
     <Card>
       <CardHeader>
         <CardTitle>Permission changes</CardTitle>
-        <CardDescription>Audit trail of role / permission mutations.</CardDescription>
+        <CardDescription>
+          Audit trail of role / permission mutations
+          {range.startDate || range.endDate ? (
+            <span className="block font-normal text-muted-foreground">
+              {range.startDate ?? "…"} → {range.endDate ?? "…"}
+            </span>
+          ) : null}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -231,6 +246,9 @@ function PermissionChangesReport({ range }: { range: ReportDateRange }) {
 
 function LoginActivityReport({ range }: { range: ReportDateRange }) {
   const [page, setPage] = React.useState(0);
+  React.useEffect(() => {
+    setPage(0);
+  }, [range.startDate, range.endDate]);
   const { data, isLoading } = useQuery({
     queryKey: ["compliance", "login-activity", range, page],
     queryFn: () => complianceReportsApi.loginActivity(range, { page, size: 25 }),
@@ -239,7 +257,14 @@ function LoginActivityReport({ range }: { range: ReportDateRange }) {
     <Card>
       <CardHeader>
         <CardTitle>Login activity</CardTitle>
-        <CardDescription>Successful and failed login attempts.</CardDescription>
+        <CardDescription>
+          Successful and failed login attempts
+          {range.startDate || range.endDate ? (
+            <span className="block font-normal text-muted-foreground">
+              {range.startDate ?? "…"} → {range.endDate ?? "…"}
+            </span>
+          ) : null}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -295,10 +320,10 @@ function LoginActivityReport({ range }: { range: ReportDateRange }) {
   );
 }
 
-function SodReport({ range }: { range: ReportDateRange }) {
+function SodReport() {
   const { data, isLoading } = useQuery({
-    queryKey: ["compliance", "sod", range],
-    queryFn: () => complianceReportsApi.sodViolations(range),
+    queryKey: ["compliance", "sod"],
+    queryFn: () => complianceReportsApi.sodViolations(),
   });
   return (
     <Card>
@@ -315,6 +340,7 @@ function SodReport({ range }: { range: ReportDateRange }) {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>UUID</TableHead>
                 <TableHead>User</TableHead>
                 <TableHead>Conflicts</TableHead>
                 <TableHead>Details</TableHead>
@@ -323,6 +349,9 @@ function SodReport({ range }: { range: ReportDateRange }) {
             <TableBody>
               {data.map((row) => (
                 <TableRow key={row.userId}>
+                  <TableCell>
+                    <CopyableUuid value={row.userId} href={`/identity/users/${row.userId}`} />
+                  </TableCell>
                   <TableCell>{row.username}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
@@ -343,14 +372,5 @@ function SodReport({ range }: { range: ReportDateRange }) {
         )}
       </CardContent>
     </Card>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
-      {children}
-    </div>
   );
 }

@@ -24,6 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
@@ -195,6 +196,7 @@ function ReportTable({ rows, loading }: { rows: AccountResponse[]; loading: bool
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>UUID</TableHead>
             <TableHead>Number</TableHead>
             <TableHead>Product</TableHead>
             <TableHead>Status</TableHead>
@@ -207,6 +209,9 @@ function ReportTable({ rows, loading }: { rows: AccountResponse[]; loading: bool
         <TableBody>
           {rows.map((a) => (
             <TableRow key={a.id}>
+              <TableCell>
+                <CopyableUuid value={a.id} href={`/accounts/${a.id}`} />
+              </TableCell>
               <TableCell className="font-mono text-xs">{a.accountNumber}</TableCell>
               <TableCell>{a.productType}</TableCell>
               <TableCell>

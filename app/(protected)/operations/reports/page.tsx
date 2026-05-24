@@ -6,7 +6,8 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -69,33 +70,37 @@ function ReportsContent() {
         description="Income statement, balance sheet, and cash flow snapshots."
       />
       <Card>
-        <CardContent className="grid gap-3 pt-6 md:grid-cols-4">
-          <Field label="Start date">
-            <Input
-              type="date"
-              value={draft.startDate}
-              onChange={(e) => setDraft({ ...draft, startDate: e.target.value })}
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Statement parameters</CardTitle>
+          <CardDescription>
+            Period range drives the income statement and cash flow tabs. As-of date drives
+            the balance sheet tab. Apply updates all three.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="space-y-2">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+              Income statement &amp; cash flow period
+            </p>
+            <DateRangeFilter
+              startDate={draft.startDate}
+              endDate={draft.endDate}
+              startLabel="Start date"
+              endLabel="End date"
+              onChange={({ startDate, endDate }) =>
+                setDraft({ ...draft, startDate, endDate })
+              }
             />
-          </Field>
-          <Field label="End date">
-            <Input
-              type="date"
-              value={draft.endDate}
-              onChange={(e) => setDraft({ ...draft, endDate: e.target.value })}
-            />
-          </Field>
-          <Field label="As of date (balance)">
-            <Input
-              type="date"
-              value={draft.asOfDate}
-              onChange={(e) => setDraft({ ...draft, asOfDate: e.target.value })}
-            />
-          </Field>
-          <div className="flex items-end">
-            <Button onClick={() => setPeriod(draft)} className="w-full md:w-auto">
-              Apply
-            </Button>
           </div>
+          <Field label="Balance sheet as of date">
+            <DateInput
+              value={draft.asOfDate}
+              onChange={(v) => setDraft({ ...draft, asOfDate: v })}
+            />
+          </Field>
+          <Button onClick={() => setPeriod(draft)} className="w-full sm:w-auto">
+            Apply to all reports
+          </Button>
         </CardContent>
       </Card>
 

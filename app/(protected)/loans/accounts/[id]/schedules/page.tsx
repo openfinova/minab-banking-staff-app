@@ -8,6 +8,8 @@ import { Can } from "@/components/rbac/can";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -18,6 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { LoanServicingLinks } from "@/components/loans/loan-servicing-links";
 import { InstallmentStatusBadge } from "@/components/loans/loan-badges";
 import { describeApiError } from "@/lib/api/errors";
@@ -167,8 +170,14 @@ function SchedContent() {
           <CardTitle>Due between (paged)</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2 items-end">
-          <Input type="date" value={dueStart} onChange={(e) => setDueStart(e.target.value)} />
-          <Input type="date" value={dueEnd} onChange={(e) => setDueEnd(e.target.value)} />
+          <DateRangeFilter
+            startDate={dueStart}
+            endDate={dueEnd}
+            onChange={({ startDate, endDate }) => {
+              setDueStart(startDate);
+              setDueEnd(endDate);
+            }}
+          />
           <Button
             type="button"
             variant="outline"
@@ -191,7 +200,7 @@ function SchedContent() {
             <Button disabled={gen.isPending} onClick={() => gen.mutate()}>
               Generate
             </Button>
-            <Input type="date" value={eff} onChange={(e) => setEff(e.target.value)} className="w-auto" />
+            <DateInput value={eff} onChange={setEff} className="w-auto" />
             <Button disabled={regen.isPending || !eff} onClick={() => regen.mutate()}>
               Regenerate
             </Button>
@@ -203,6 +212,7 @@ function SchedContent() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>UUID</TableHead>
               <TableHead>#</TableHead>
               <TableHead>Due</TableHead>
               <TableHead>Status</TableHead>
@@ -213,6 +223,9 @@ function SchedContent() {
           <TableBody>
             {rows.map((r) => (
               <TableRow key={r.id}>
+                <TableCell>
+                  <CopyableUuid value={r.id} />
+                </TableCell>
                 <TableCell>{r.installmentNumber}</TableCell>
                 <TableCell>{r.dueDate}</TableCell>
                 <TableCell>
@@ -222,7 +235,7 @@ function SchedContent() {
                 <TableCell className="space-y-1 min-w-[200px]">
                   <Can permissions={[Permissions.LoanCollect]}>
                     <div className="flex gap-1 flex-wrap">
-                      <Input type="date" className="h-8 w-32" value={paidDate} onChange={(e) => setPaidDate(e.target.value)} />
+                      <DateInput className="h-8 w-32" value={paidDate} onChange={setPaidDate} />
                       <Button
                         size="sm"
                         variant="secondary"

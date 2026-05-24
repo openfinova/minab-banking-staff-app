@@ -9,7 +9,6 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -18,9 +17,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DateInput } from "@/components/ui/date-input";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { describeApiError } from "@/lib/api/errors";
 import { accountsApi } from "@/lib/api/modules/accounts";
 import { Permissions } from "@/lib/rbac/permissions";
@@ -114,28 +114,17 @@ function AccountTransactionsContent() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-wrap items-end gap-3">
-          <div className="grid gap-1.5">
-            <Label htmlFor="tx-from">From</Label>
-            <DateInput
-              id="tx-from"
-              value={fromDate}
-              onChange={(v) => {
-                setPage(0);
-                setFromDate(v);
-              }}
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <Label htmlFor="tx-to">To</Label>
-            <DateInput
-              id="tx-to"
-              value={toDate}
-              onChange={(v) => {
-                setPage(0);
-                setToDate(v);
-              }}
-            />
-          </div>
+          <DateRangeFilter
+            startDate={fromDate}
+            endDate={toDate}
+            startLabel="From"
+            endLabel="To"
+            onChange={({ startDate, endDate }) => {
+              setPage(0);
+              setFromDate(startDate);
+              setToDate(endDate);
+            }}
+          />
           {list.isFetching ? (
             <span className="text-xs text-muted-foreground">Loading…</span>
           ) : null}
@@ -159,6 +148,7 @@ function AccountTransactionsContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
@@ -170,6 +160,12 @@ function AccountTransactionsContent() {
                 <TableBody>
                   {rows.map((t) => (
                     <TableRow key={t.id}>
+                      <TableCell>
+                        <CopyableUuid
+                          value={t.id}
+                          href={`/transaction-processing/transactions/${t.id}`}
+                        />
+                      </TableCell>
                       <TableCell className="text-xs">
                         {t.transactionDate ? t.transactionDate.replace("T", " ").slice(0, 19) : "—"}
                       </TableCell>
@@ -178,8 +174,12 @@ function AccountTransactionsContent() {
                         {formatMoney(t.amount, t.currency ?? ccy)}
                       </TableCell>
                       <TableCell className="max-w-[14rem] truncate text-xs">{t.description ?? "—"}</TableCell>
-                      <TableCell className="font-mono text-xs">{t.referenceId ?? "—"}</TableCell>
-                      <TableCell className="font-mono text-xs">{t.glTransactionId ?? "—"}</TableCell>
+                      <TableCell>
+                        <CopyableUuid value={t.referenceId} />
+                      </TableCell>
+                      <TableCell>
+                        <CopyableUuid value={t.glTransactionId} />
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

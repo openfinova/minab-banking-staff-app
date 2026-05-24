@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -140,6 +141,7 @@ export function StaffUserField({
               <Table>
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
+                    <TableHead className="sticky top-0 bg-popover">UUID</TableHead>
                     <TableHead className="sticky top-0 bg-popover">Username</TableHead>
                     <TableHead className="sticky top-0 bg-popover">Email</TableHead>
                     {suggestionSource === "audit" ? (
@@ -162,6 +164,13 @@ export function StaffUserField({
                         }
                       }}
                     >
+                      <TableCell>
+                        <CopyableUuid
+                          value={u.id}
+                          href={`/identity/users/${u.id}`}
+                          stopPropagation
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">{u.username}</TableCell>
                       <TableCell className="text-muted-foreground text-sm">{u.email ?? "—"}</TableCell>
                       {suggestionSource === "audit" ? (

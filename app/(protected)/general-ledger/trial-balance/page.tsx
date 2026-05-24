@@ -4,7 +4,7 @@ import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { DateInput } from "@/components/ui/date-input";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
@@ -62,7 +62,7 @@ function TrialBalanceContent() {
           <div className="flex flex-wrap items-end gap-2">
             <div className="space-y-1.5">
               <Label className="text-xs uppercase text-muted-foreground">As of</Label>
-              <Input type="date" value={asOfDate} onChange={(e) => setAsOfDate(e.target.value)} />
+              <DateInput value={asOfDate} onChange={setAsOfDate} />
             </div>
             <Button type="button" onClick={() => setSubmitted(asOfDate)}>
               Run

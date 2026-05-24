@@ -8,6 +8,7 @@ import { Can } from "@/components/rbac/can";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -25,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { LoanServicingLinks } from "@/components/loans/loan-servicing-links";
 import { describeApiError } from "@/lib/api/errors";
 import { useToast } from "@/components/ui/use-toast";
@@ -174,7 +176,7 @@ function PayContent() {
             </div>
             <div className="grid gap-1.5">
               <Label>Date</Label>
-              <Input type="date" value={pDate} onChange={(e) => setPDate(e.target.value)} />
+              <DateInput value={pDate} onChange={setPDate} />
             </div>
             <Select value={pMethod} onValueChange={(v) => setPMethod(v as PaymentMethod)}>
               <SelectTrigger className="w-44">
@@ -232,7 +234,7 @@ function PayContent() {
             <Input placeholder="Interest" value={mInt} onChange={(e) => setMInt(e.target.value)} />
             <Input placeholder="Fees" value={mFee} onChange={(e) => setMFee(e.target.value)} />
             <Input placeholder="Penalties" value={mPen} onChange={(e) => setMPen(e.target.value)} />
-            <Input type="date" value={mDate} onChange={(e) => setMDate(e.target.value)} />
+            <DateInput value={mDate} onChange={setMDate} />
             <Select value={mType} onValueChange={(v) => setMType(v as PaymentType)}>
               <SelectTrigger>
                 <SelectValue />
@@ -288,6 +290,7 @@ function PayContent() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead>UUID</TableHead>
               <TableHead>Date</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Method</TableHead>
@@ -297,6 +300,9 @@ function PayContent() {
           <TableBody>
             {(list.data?.content ?? []).map((r) => (
               <TableRow key={r.id}>
+                <TableCell>
+                  <CopyableUuid value={r.id} />
+                </TableCell>
                 <TableCell>{r.paymentDate}</TableCell>
                 <TableCell>{r.paymentAmount}</TableCell>
                 <TableCell>{r.paymentMethod}</TableCell>

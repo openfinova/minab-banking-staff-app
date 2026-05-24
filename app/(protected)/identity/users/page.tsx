@@ -2,11 +2,10 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,16 +26,17 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { Pagination } from "@/components/data/pagination";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { Permissions } from "@/lib/rbac/permissions";
-import { usersApi, type UserSearchCriteria } from "@/lib/api/modules/users";
+import { usersApi, type UserSearchCriteria, type UserSummary } from "@/lib/api/modules/users";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
-import { describeApiError } from "@/lib/api/errors";
-import { CustomerQuickLookup } from "@/components/customers/customer-quick-lookup";
+import { CustomerPartyHoverCell } from "@/components/customers/customer-party-hover-cell";
+
+type AccountStatusFilter = "" | "active" | "disabled" | "locked" | "suspended";
 
 export default function UsersPage() {
   return (
@@ -47,29 +47,48 @@ export default function UsersPage() {
 }
 
 function UsersList() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [criteria, setCriteria] = React.useState<UserSearchCriteria>({});
-  const [draft, setDraft] = React.useState<UserSearchCriteria>({});
+  const [searchText, setSearchText] = React.useState("");
+  const [debouncedQ, setDebouncedQ] = React.useState("");
+  const [userType, setUserType] = React.useState<UserSearchCriteria["userType"]>();
+  const [branchCode, setBranchCode] = React.useState("");
+  const [accountStatus, setAccountStatus] = React.useState<AccountStatusFilter>("");
   const [page, setPage] = React.useState(0);
   const size = 20;
 
+  React.useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQ(searchText.trim()), 320);
+    return () => window.clearTimeout(t);
+  }, [searchText]);
+
+  const criteria = React.useMemo<UserSearchCriteria>(() => {
+    const next: UserSearchCriteria = {};
+    if (debouncedQ) next.q = debouncedQ;
+    if (userType) next.userType = userType;
+    if (branchCode.trim()) next.branchCode = branchCode.trim();
+    if (accountStatus === "active") next.enabled = true;
+    if (accountStatus === "disabled") next.enabled = false;
+    if (accountStatus === "locked") next.locked = true;
+    if (accountStatus === "suspended") next.suspended = true;
+    return next;
+  }, [accountStatus, branchCode, debouncedQ, userType]);
+
+  const hasFilters =
+    Boolean(debouncedQ) ||
+    Boolean(userType) ||
+    Boolean(branchCode.trim()) ||
+    Boolean(accountStatus);
+
   const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["users", criteria, page, size],
-    queryFn: () =>
-      Object.values(criteria).some((v) => v !== undefined && v !== "")
-        ? usersApi.search(criteria, { page, size, sort: "username,asc" })
-        : usersApi.list({ page, size, sort: "username,asc" }),
+    queryFn: () => usersApi.search(criteria, { page, size, sort: "username,asc" }),
   });
 
-  const onApply = () => {
-    setCriteria(draft);
-    setPage(0);
-  };
-
-  const onClear = () => {
-    setDraft({});
-    setCriteria({});
+  const onClearFilters = () => {
+    setSearchText("");
+    setDebouncedQ("");
+    setUserType(undefined);
+    setBranchCode("");
+    setAccountStatus("");
     setPage(0);
   };
 
@@ -88,92 +107,104 @@ function UsersList() {
           </Can>
         }
       />
+
+      <div className="grid max-w-3xl gap-1.5">
+        <Label htmlFor="user-search">Search</Label>
+        <Input
+          id="user-search"
+          value={searchText}
+          onChange={(e) => {
+            setSearchText(e.target.value);
+            setPage(0);
+          }}
+          placeholder="Username, email, or user UUID…"
+          autoComplete="off"
+        />
+      </div>
+
       <Card>
-        <CardContent className="space-y-4 pt-6">
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <Field label="Username">
-              <Input
-                value={draft.username ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, username: e.target.value }))}
-                placeholder="staff.ops.01"
-              />
-            </Field>
-            <Field label="Email">
-              <Input
-                value={draft.email ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))}
-                placeholder="ops01@bank.local"
-              />
-            </Field>
-            <Field label="User type">
+        <CardHeader className="flex flex-col gap-4">
+          <div>
+            <CardTitle>Users</CardTitle>
+            <CardDescription>
+              Filter the directory by type, branch, or account status. Results update as you change filters.
+            </CardDescription>
+          </div>
+          <div className="grid w-full gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-1.5">
+              <Label htmlFor="user-type-filter">User type</Label>
               <Select
-                value={draft.userType ?? "ALL"}
-                onValueChange={(v) =>
-                  setDraft((d) => ({ ...d, userType: v === "ALL" ? undefined : v }))
-                }
+                value={userType ?? "__all__"}
+                onValueChange={(v) => {
+                  setPage(0);
+                  setUserType(v === "__all__" ? undefined : v);
+                }}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="All" />
+                <SelectTrigger id="user-type-filter">
+                  <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ALL">All</SelectItem>
+                  <SelectItem value="__all__">All types</SelectItem>
                   <SelectItem value="STAFF">Staff</SelectItem>
                   <SelectItem value="CUSTOMER">Customer</SelectItem>
                 </SelectContent>
               </Select>
-            </Field>
-            <Field label="Branch code">
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="branch-filter">Branch code</Label>
               <Input
-                value={draft.branchCode ?? ""}
-                onChange={(e) => setDraft((d) => ({ ...d, branchCode: e.target.value }))}
+                id="branch-filter"
+                value={branchCode}
+                onChange={(e) => {
+                  setBranchCode(e.target.value);
+                  setPage(0);
+                }}
                 placeholder="HQ01"
               />
-            </Field>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button onClick={onApply}>
-              <Search className="h-4 w-4" /> Apply filters
-            </Button>
-            <Button variant="ghost" onClick={onClear}>
-              Clear
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => refetch()}
-              aria-label="Refresh"
-            >
-              <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-            </Button>
-          </div>
-          <div className="space-y-3 border-t pt-4">
-            <Field label="Open customer-linked user">
-              <p className="mb-2 text-xs text-muted-foreground">
-                Search customers by number, name, or contact details; opens the identity login linked to that party.
-              </p>
-              <CustomerQuickLookup
-                onPickCustomer={async (c) => {
-                  try {
-                    const user = await usersApi.getByCustomerPartyId(c.id);
-                    router.push(`/identity/users/${user.id}`);
-                  } catch (error) {
-                    toast({
-                      variant: "destructive",
-                      title: "Could not open user",
-                      description: describeApiError(error),
-                    });
-                  }
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="account-status-filter">Account status</Label>
+              <Select
+                value={accountStatus || "__all__"}
+                onValueChange={(v) => {
+                  setPage(0);
+                  setAccountStatus(v === "__all__" ? "" : (v as AccountStatusFilter));
                 }}
-                actionLabel="Open linked user"
-                helperText="Requires customer read access and an identity user linked to the selected party."
-              />
-            </Field>
+              >
+                <SelectTrigger id="account-status-filter">
+                  <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All statuses</SelectItem>
+                  <SelectItem value="active">Active (enabled)</SelectItem>
+                  <SelectItem value="disabled">Disabled</SelectItem>
+                  <SelectItem value="locked">Locked</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={!hasFilters}
+                onClick={onClearFilters}
+              >
+                Clear filters
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => refetch()}
+                aria-label="Refresh"
+              >
+                <RefreshCw className={isFetching ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="pt-6">
+        </CardHeader>
+        <CardContent>
           {isLoading ? (
             <div className="space-y-2">
               <Skeleton className="h-8 w-full" />
@@ -185,11 +216,14 @@ function UsersList() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Username</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Type</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Employee ID</TableHead>
                     <TableHead>Branch</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Account status</TableHead>
                     <TableHead>Provisioning</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -203,6 +237,13 @@ function UsersList() {
                       }}
                     >
                       <TableCell>
+                        <CopyableUuid
+                          value={user.id}
+                          href={`/identity/users/${user.id}`}
+                          stopPropagation
+                        />
+                      </TableCell>
+                      <TableCell>
                         <Link
                           href={`/identity/users/${user.id}`}
                           className="font-medium hover:underline"
@@ -210,20 +251,22 @@ function UsersList() {
                           {user.username}
                         </Link>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{user.email ?? "-"}</TableCell>
+                      <TableCell className="text-muted-foreground">{user.email ?? "—"}</TableCell>
                       <TableCell>
                         <Badge variant="muted">{user.userType}</Badge>
                       </TableCell>
-                      <TableCell>{user.branchCode ?? "-"}</TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          <StatusBadge status={user.enabled ? "ENABLED" : "DISABLED"} />
-                          {user.locked ? <StatusBadge status="LOCKED" variantOverride="destructive" /> : null}
-                          {user.suspended ? <StatusBadge status="SUSPENDED" variantOverride="warning" /> : null}
-                        </div>
+                        <CustomerPartyHoverCell customerPartyId={user.customerPartyId} />
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">
+                        {user.userType === "STAFF" ? user.employeeId ?? "—" : "—"}
+                      </TableCell>
+                      <TableCell>{user.branchCode ?? "—"}</TableCell>
+                      <TableCell>
+                        <UserAccountStatus user={user} />
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={user.provisioningStatus ?? "-"} />
+                        <StatusBadge status={user.provisioningStatus ?? "—"} />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -239,7 +282,7 @@ function UsersList() {
           ) : (
             <EmptyState
               title="No users match your filters"
-              description="Try adjusting the search filters or clear them to see everyone."
+              description="Try a different search term or clear filters to see everyone."
             />
           )}
         </CardContent>
@@ -248,11 +291,13 @@ function UsersList() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function UserAccountStatus({ user }: { user: UserSummary }) {
   return (
-    <div className="space-y-1.5">
-      <Label className="text-xs uppercase tracking-wide text-muted-foreground">{label}</Label>
-      {children}
+    <div className="flex flex-wrap gap-1">
+      {!user.enabled ? <StatusBadge status="DISABLED" /> : null}
+      {user.enabled && !user.locked && !user.suspended ? <StatusBadge status="ENABLED" /> : null}
+      {user.locked ? <StatusBadge status="LOCKED" variantOverride="destructive" /> : null}
+      {user.suspended ? <StatusBadge status="SUSPENDED" variantOverride="warning" /> : null}
     </div>
   );
 }

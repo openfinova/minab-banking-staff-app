@@ -8,8 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import {
   Table,
   TableBody,
@@ -18,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Pagination } from "@/components/data/pagination";
 import { ApplicationStatusBadge } from "@/components/loans/loan-badges";
 import { describeApiError } from "@/lib/api/errors";
@@ -106,16 +106,14 @@ function ApplicationsContent() {
               <TabsTrigger value="range">Approved date range</TabsTrigger>
             </TabsList>
             {tab === "range" ? (
-              <div className="mb-4 flex flex-wrap items-end gap-3">
-                <div className="grid gap-1.5">
-                  <Label>Start</Label>
-                  <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} />
-                </div>
-                <div className="grid gap-1.5">
-                  <Label>End</Label>
-                  <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
-                </div>
-              </div>
+              <DateRangeFilter
+                startDate={start}
+                endDate={end}
+                onChange={({ startDate, endDate }) => {
+                  setStart(startDate);
+                  setEnd(endDate);
+                }}
+              />
             ) : null}
             <TabsContent value={tab} className="mt-0">
               {q.isLoading ? (
@@ -143,6 +141,7 @@ function AppTable({ rows }: { rows: LoanApplicationResponse[] }) {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>UUID</TableHead>
             <TableHead>Number</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Amount</TableHead>
@@ -153,6 +152,9 @@ function AppTable({ rows }: { rows: LoanApplicationResponse[] }) {
         <TableBody>
           {rows.map((r) => (
             <TableRow key={r.id}>
+              <TableCell>
+                <CopyableUuid value={r.id} href={`/loans/applications/${r.id}`} />
+              </TableCell>
               <TableCell className="font-mono text-xs">{r.applicationNumber}</TableCell>
               <TableCell>
                 <ApplicationStatusBadge status={r.status} />

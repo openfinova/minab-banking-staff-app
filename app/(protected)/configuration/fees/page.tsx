@@ -37,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
@@ -105,6 +106,7 @@ function FeesContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Transaction</TableHead>
                   <TableHead>Tier</TableHead>
                   <TableHead>Type</TableHead>
@@ -117,6 +119,9 @@ function FeesContent() {
               <TableBody>
                 {list.data.map((rule) => (
                   <TableRow key={rule.id}>
+                    <TableCell>
+                      <CopyableUuid value={rule.id} />
+                    </TableCell>
                     <TableCell>
                       <Badge variant="muted">{rule.transactionType}</Badge>
                     </TableCell>

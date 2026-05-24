@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { Pagination } from "@/components/data/pagination";
 import { describeApiError } from "@/lib/api/errors";
@@ -135,6 +136,7 @@ function LoanProductsContent() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>UUID</TableHead>
                       <TableHead>Code</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Type</TableHead>
@@ -146,6 +148,9 @@ function LoanProductsContent() {
                   <TableBody>
                     {rows.map((p) => (
                       <TableRow key={p.id}>
+                        <TableCell>
+                          <CopyableUuid value={p.id} href={`/loans/products/${p.id}`} />
+                        </TableCell>
                         <TableCell className="font-mono text-xs">{p.productCode}</TableCell>
                         <TableCell>{p.productName}</TableCell>
                         <TableCell>{p.productType}</TableCell>

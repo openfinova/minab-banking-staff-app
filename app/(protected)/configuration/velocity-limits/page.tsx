@@ -37,6 +37,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
@@ -113,7 +114,10 @@ function VelocityLimitsContent() {
       {committedAccountId ? (
         <Card>
           <CardHeader>
-            <CardTitle>Limits for {committedAccountId}</CardTitle>
+            <CardTitle>
+              Limits for{" "}
+              <CopyableUuid value={committedAccountId} href={`/accounts/${committedAccountId}`} />
+            </CardTitle>
             <CardDescription>Limits applied to this account across periods.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -123,6 +127,7 @@ function VelocityLimitsContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Period</TableHead>
                     <TableHead>Max amount</TableHead>
@@ -133,6 +138,9 @@ function VelocityLimitsContent() {
                 <TableBody>
                   {list.data.map((limit) => (
                     <TableRow key={limit.id}>
+                      <TableCell>
+                        <CopyableUuid value={limit.id} />
+                      </TableCell>
                       <TableCell>
                         <Badge variant="muted">{limit.transactionType}</Badge>
                       </TableCell>

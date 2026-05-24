@@ -7,6 +7,7 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { Input } from "@/components/ui/input";
 import {
   loanAccountsApi,
@@ -134,10 +135,14 @@ function Content() {
             <CardTitle>Maturing in window</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <Input type="date" value={mStart} onChange={(e) => setMStart(e.target.value)} />
-              <Input type="date" value={mEnd} onChange={(e) => setMEnd(e.target.value)} />
-            </div>
+            <DateRangeFilter
+              startDate={mStart}
+              endDate={mEnd}
+              onChange={({ startDate, endDate }) => {
+                setMStart(startDate);
+                setMEnd(endDate);
+              }}
+            />
             <ul className="text-sm space-y-1">
               {(maturingQ.data?.content ?? []).map((row) => (
                 <li key={row.id}>

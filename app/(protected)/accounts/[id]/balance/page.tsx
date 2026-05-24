@@ -22,6 +22,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { DateInput } from "@/components/ui/date-input";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
@@ -305,14 +306,16 @@ function AccountBalanceContent() {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap items-end gap-3">
-            <div className="grid gap-1.5">
-              <Label htmlFor="bh-from">From</Label>
-              <DateInput id="bh-from" value={historyFrom} onChange={setHistoryFrom} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="bh-to">To</Label>
-              <DateInput id="bh-to" value={historyTo} onChange={setHistoryTo} />
-            </div>
+          <DateRangeFilter
+            startDate={historyFrom}
+            endDate={historyTo}
+            startLabel="From"
+            endLabel="To"
+            onChange={({ startDate, endDate }) => {
+              setHistoryFrom(startDate);
+              setHistoryTo(endDate);
+            }}
+          />
             <Button
               type="button"
               variant="secondary"

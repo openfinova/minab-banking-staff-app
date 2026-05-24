@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { useToast } from "@/components/ui/use-toast";
@@ -95,7 +96,7 @@ function FeeRulesContent() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Id</TableHead>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Tier</TableHead>
                   <TableHead>Fee type</TableHead>
@@ -106,7 +107,9 @@ function FeeRulesContent() {
               <TableBody>
                 {list.data.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs">{r.id?.slice(0, 8)}…</TableCell>
+                    <TableCell>
+                      <CopyableUuid value={r.id} />
+                    </TableCell>
                     <TableCell>{r.transactionType}</TableCell>
                     <TableCell>{r.customerTier}</TableCell>
                     <TableCell>{r.feeType}</TableCell>

@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,6 +72,7 @@ function JournalContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Description</TableHead>
                   <TableHead className="text-right">Debit</TableHead>
@@ -80,6 +82,9 @@ function JournalContent() {
               <TableBody>
                 {q.data.map((e) => (
                   <TableRow key={e.id ?? `${e.postingDate}-${e.description}`}>
+                    <TableCell>
+                      <CopyableUuid value={e.id} />
+                    </TableCell>
                     <TableCell className="text-xs">{e.postingDate ?? "—"}</TableCell>
                     <TableCell className="text-xs">{e.description ?? "—"}</TableCell>
                     <TableCell className="text-right font-mono text-xs">

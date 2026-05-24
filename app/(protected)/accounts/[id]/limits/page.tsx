@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import { accountsApi, type LimitPeriod, type LimitType } from "@/lib/api/modules/accounts";
@@ -289,6 +290,7 @@ function AccountLimitsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Period</TableHead>
                   <TableHead className="text-right">Max amount</TableHead>
@@ -299,6 +301,9 @@ function AccountLimitsContent() {
               <TableBody>
                 {rows.map((r) => (
                   <TableRow key={r.id}>
+                    <TableCell>
+                      <CopyableUuid value={r.id} />
+                    </TableCell>
                     <TableCell>{r.limitType}</TableCell>
                     <TableCell>{r.limitPeriod}</TableCell>
                     <TableCell className="text-right">{formatMoney(r.maxAmount, ccy)}</TableCell>

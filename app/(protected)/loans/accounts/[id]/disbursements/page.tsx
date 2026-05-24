@@ -8,6 +8,8 @@ import { Can } from "@/components/rbac/can";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -25,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { LoanServicingLinks } from "@/components/loans/loan-servicing-links";
 import { StatusBadge } from "@/components/data/status-badge";
 import { describeApiError } from "@/lib/api/errors";
@@ -136,7 +139,7 @@ function Content() {
             </div>
             <div className="grid gap-1.5">
               <Label>Date</Label>
-              <Input type="date" value={disbDate} onChange={(e) => setDisbDate(e.target.value)} />
+              <DateInput value={disbDate} onChange={setDisbDate} />
             </div>
             <div className="grid gap-1.5">
               <Label>Method</Label>
@@ -190,16 +193,16 @@ function Content() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-2 items-end">
-            <div className="grid gap-1.5">
-              <Label>From</Label>
-              <Input type="date" value={dStart} onChange={(e) => setDStart(e.target.value)} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>To</Label>
-              <Input type="date" value={dEnd} onChange={(e) => setDEnd(e.target.value)} />
-            </div>
-          </div>
+          <DateRangeFilter
+            startDate={dStart}
+            endDate={dEnd}
+            startLabel="From"
+            endLabel="To"
+            onChange={({ startDate, endDate }) => {
+              setDStart(startDate);
+              setDEnd(endDate);
+            }}
+          />
         </CardContent>
       </Card>
 
@@ -212,7 +215,7 @@ function Content() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
+                <TableHead>UUID</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -221,7 +224,9 @@ function Content() {
             <TableBody>
               {rows.map((d) => (
                 <TableRow key={d.id}>
-                  <TableCell className="font-mono text-[10px]">{d.id}</TableCell>
+                  <TableCell>
+                    <CopyableUuid value={d.id} />
+                  </TableCell>
                   <TableCell>{d.disbursementAmount}</TableCell>
                   <TableCell>
                     {d.status ? <StatusBadge status={d.status} /> : "—"}

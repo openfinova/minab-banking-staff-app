@@ -26,6 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { Can } from "@/components/rbac/can";
@@ -139,7 +140,13 @@ function TpTransactionDetailContent() {
             <dl className="grid gap-2 text-sm md:grid-cols-2">
               <div>
                 <dt className="text-muted-foreground">Id</dt>
-                <dd className="font-mono text-xs">{detail.data.id}</dd>
+                <dd>
+                  <CopyableUuid
+                    value={detail.data.id}
+                    href={`/transaction-processing/transactions/${detail.data.id}`}
+                    truncate={false}
+                  />
+                </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Status</dt>
@@ -166,15 +173,35 @@ function TpTransactionDetailContent() {
               </div>
               <div>
                 <dt className="text-muted-foreground">Idempotency</dt>
-                <dd className="font-mono text-xs">{detail.data.idempotencyKey}</dd>
+                <dd>
+                  <CopyableUuid value={detail.data.idempotencyKey} truncate={false} />
+                </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Source</dt>
-                <dd className="font-mono text-xs">{detail.data.sourceAccountId ?? "—"}</dd>
+                <dd>
+                  <CopyableUuid
+                    value={detail.data.sourceAccountId}
+                    href={
+                      detail.data.sourceAccountId
+                        ? `/accounts/${detail.data.sourceAccountId}`
+                        : undefined
+                    }
+                  />
+                </dd>
               </div>
               <div>
                 <dt className="text-muted-foreground">Destination</dt>
-                <dd className="font-mono text-xs">{detail.data.destinationAccountId ?? "—"}</dd>
+                <dd>
+                  <CopyableUuid
+                    value={detail.data.destinationAccountId}
+                    href={
+                      detail.data.destinationAccountId
+                        ? `/accounts/${detail.data.destinationAccountId}`
+                        : undefined
+                    }
+                  />
+                </dd>
               </div>
               <div className="md:col-span-2">
                 <dt className="text-muted-foreground">Description</dt>
@@ -261,7 +288,12 @@ function TpTransactionDetailContent() {
               <TableBody>
                 {refunds.data.map((r) => (
                   <TableRow key={r.id}>
-                    <TableCell className="font-mono text-xs">{r.id}</TableCell>
+                    <TableCell>
+                      <CopyableUuid
+                        value={r.id}
+                        href={`/transaction-processing/transactions/${r.id}`}
+                      />
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={r.status ?? ""} />
                     </TableCell>

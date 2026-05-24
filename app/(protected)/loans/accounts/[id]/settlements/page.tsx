@@ -7,6 +7,7 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LoanServicingLinks } from "@/components/loans/loan-servicing-links";
@@ -75,7 +76,7 @@ function Content() {
           <CardTitle>Quote</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-3 items-end">
-          <Input type="date" value={setDate} onChange={(e) => setSetDate(e.target.value)} />
+          <DateInput value={setDate} onChange={setSetDate} />
           <select className="border rounded-md p-2 text-sm" value={meth} onChange={(e) => setMeth(e.target.value as SettlementCalculationMethod)}>
             <option value="FULL_OUTSTANDING">FULL_OUTSTANDING</option>
             <option value="DISCOUNTED">DISCOUNTED</option>
@@ -155,7 +156,7 @@ function Content() {
                 >
                   Cancel
                 </Button>
-                <Input type="date" className="h-8 w-36" value={payDate} onChange={(e) => setPayDate(e.target.value)} />
+                <DateInput className="h-8 w-36" value={payDate} onChange={setPayDate} />
                 <Input className="h-8 w-28" value={procBy} onChange={(e) => setProcBy(e.target.value)} />
                 <Button
                   size="sm"

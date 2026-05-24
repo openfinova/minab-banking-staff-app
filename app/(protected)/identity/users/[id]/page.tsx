@@ -23,6 +23,7 @@ import { describeApiError } from "@/lib/api/errors";
 import { generateBankCompliantPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/schemas/password-policy";
 import { CUSTOMER_PORTAL_ROLE_NAME } from "@/lib/schemas/users";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DateTimeInput } from "@/components/ui/datetime-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -415,11 +416,10 @@ function UserDetail() {
                 <Label htmlFor="suspensionUntil" className="text-xs">
                   Suspension until (optional)
                 </Label>
-                <Input
+                <DateTimeInput
                   id="suspensionUntil"
-                  type="datetime-local"
                   value={suspensionUntil}
-                  onChange={(e) => setSuspensionUntil(e.target.value)}
+                  onChange={setSuspensionUntil}
                 />
               </div>
             ) : null}
@@ -679,10 +679,9 @@ function UserAccessEditor({
           />
         </Field>
         <Field label="Account expires at">
-          <Input
-            type="datetime-local"
+          <DateTimeInput
             value={draft.accountExpiresAt}
-            onChange={(e) => setDraft({ ...draft, accountExpiresAt: e.target.value })}
+            onChange={(v) => setDraft({ ...draft, accountExpiresAt: v })}
           />
         </Field>
         <div className="md:col-span-2">

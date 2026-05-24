@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -172,7 +173,7 @@ function CustomerKycContent() {
           ) : wf ? (
             <div className="space-y-2 text-sm">
               <div className="flex flex-wrap gap-2">
-                <span className="font-mono text-xs">{wf.id}</span>
+                <CopyableUuid value={wf.id} />
                 <StatusBadge status={wf.status} />
               </div>
               {wf.initiatedBy ? (
@@ -323,7 +324,7 @@ function CustomerKycContent() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Id</TableHead>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Initiated</TableHead>
                   <TableHead>Reviewer</TableHead>
@@ -332,7 +333,9 @@ function CustomerKycContent() {
               <TableBody>
                 {history.data.map((h) => (
                   <TableRow key={h.id}>
-                    <TableCell className="font-mono text-xs">{h.id}</TableCell>
+                    <TableCell>
+                      <CopyableUuid value={h.id} />
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={h.status} />
                     </TableCell>

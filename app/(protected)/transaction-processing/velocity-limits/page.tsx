@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
@@ -31,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Can } from "@/components/rbac/can";
 import { RouteGuard } from "@/components/rbac/route-guard";
 import { useToast } from "@/components/ui/use-toast";
@@ -176,12 +178,21 @@ function VelocityLimitsContent() {
             <CardHeader>
               <CardTitle>Breach history</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid gap-2 md:grid-cols-3">
-                <Input placeholder="Account UUID" value={accountId} onChange={(e) => setAccountId(e.target.value)} />
-                <Input type="date" value={breachStart} onChange={(e) => setBreachStart(e.target.value)} />
-                <Input type="date" value={breachEnd} onChange={(e) => setBreachEnd(e.target.value)} />
-              </div>
+            <CardContent className="space-y-4">
+              <Input
+                placeholder="Account UUID"
+                value={accountId}
+                onChange={(e) => setAccountId(e.target.value)}
+                className="max-w-md"
+              />
+              <DateRangeFilter
+                startDate={breachStart}
+                endDate={breachEnd}
+                onChange={({ startDate, endDate }) => {
+                  setBreachStart(startDate);
+                  setBreachEnd(endDate);
+                }}
+              />
               <Button type="button" onClick={() => void breaches.refetch()} disabled={!accountId.trim()}>
                 Load breaches
               </Button>
@@ -254,7 +265,7 @@ function LimitsTable({
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Id</TableHead>
+          <TableHead>UUID</TableHead>
           <TableHead>Account</TableHead>
           <TableHead>Type</TableHead>
           <TableHead>Period</TableHead>
@@ -266,8 +277,12 @@ function LimitsTable({
       <TableBody>
         {limits.map((l) => (
           <TableRow key={l.id}>
-            <TableCell className="font-mono text-xs">{l.id?.slice(0, 8)}…</TableCell>
-            <TableCell className="font-mono text-xs">{l.accountId}</TableCell>
+            <TableCell>
+              <CopyableUuid value={l.id} />
+            </TableCell>
+            <TableCell>
+              <CopyableUuid value={l.accountId} href={l.accountId ? `/accounts/${l.accountId}` : undefined} />
+            </TableCell>
             <TableCell>{l.transactionType}</TableCell>
             <TableCell>{l.period}</TableCell>
             <TableCell>{l.maxAmount != null ? String(l.maxAmount) : "—"}</TableCell>

@@ -36,6 +36,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -286,6 +287,7 @@ function CustomerDocumentsContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Masked #</TableHead>
                   <TableHead>Country</TableHead>
@@ -297,6 +299,9 @@ function CustomerDocumentsContent() {
               <TableBody>
                 {list.data.map((d) => (
                   <TableRow key={d.id}>
+                    <TableCell>
+                      <CopyableUuid value={d.id} />
+                    </TableCell>
                     <TableCell>{d.type}</TableCell>
                     <TableCell className="font-mono text-xs">{d.maskedDocumentNumber}</TableCell>
                     <TableCell>{d.issuingCountry}</TableCell>

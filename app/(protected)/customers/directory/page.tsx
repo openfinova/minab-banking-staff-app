@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { CustomerQuickLookup } from "@/components/customers/customer-quick-lookup";
 import { describeApiError } from "@/lib/api/errors";
@@ -175,6 +176,7 @@ function CustomerDirectoryContent() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>UUID</TableHead>
                         <TableHead>Number</TableHead>
                         <TableHead>Name</TableHead>
                         <TableHead>Type</TableHead>
@@ -191,6 +193,9 @@ function CustomerDirectoryContent() {
                             : [c.firstName, c.lastName].filter(Boolean).join(" ") || c.customerNumber;
                         return (
                           <TableRow key={c.id}>
+                            <TableCell>
+                              <CopyableUuid value={c.id} href={`/customers/${c.id}`} />
+                            </TableCell>
                             <TableCell className="font-mono text-xs">{c.customerNumber}</TableCell>
                             <TableCell>{label}</TableCell>
                             <TableCell>{c.type}</TableCell>

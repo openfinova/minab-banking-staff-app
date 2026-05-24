@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -155,7 +156,9 @@ function CustomerIdentityContent() {
             <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
               <div>
                 <p className="font-medium">{user.username}</p>
-                <p className="text-xs text-muted-foreground font-mono">{user.id}</p>
+                <p className="text-xs text-muted-foreground">
+                  <CopyableUuid value={user.id} href={`/identity/users/${user.id}`} />
+                </p>
                 {user.email ? <p className="text-xs">{user.email}</p> : null}
               </div>
               <Button variant="secondary" size="sm" asChild>
@@ -267,6 +270,7 @@ function CustomerIdentityContent() {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead>UUID</TableHead>
                             <TableHead>Username</TableHead>
                             <TableHead>Email</TableHead>
                             <TableHead className="hidden sm:table-cell">Party</TableHead>
@@ -280,12 +284,27 @@ function CustomerIdentityContent() {
                               u.customerPartyId.toLowerCase() !== customerId.toLowerCase();
                             return (
                               <TableRow key={u.id}>
+                                <TableCell>
+                                  <CopyableUuid
+                                    value={u.id}
+                                    href={`/identity/users/${u.id}`}
+                                    stopPropagation
+                                  />
+                                </TableCell>
                                 <TableCell className="font-medium">{u.username}</TableCell>
                                 <TableCell className="text-muted-foreground text-sm">
                                   {u.email ?? "—"}
                                 </TableCell>
-                                <TableCell className="hidden font-mono text-xs sm:table-cell">
-                                  {u.customerPartyId ?? "—"}
+                                <TableCell className="hidden sm:table-cell">
+                                  {u.customerPartyId ? (
+                                    <CopyableUuid
+                                      value={u.customerPartyId}
+                                      href={`/customers/${u.customerPartyId}`}
+                                      stopPropagation
+                                    />
+                                  ) : (
+                                    "—"
+                                  )}
                                 </TableCell>
                                 <TableCell className="text-right">
                                   <Button
@@ -313,12 +332,12 @@ function CustomerIdentityContent() {
                   {linkUserId ? (
                     <p className="text-sm">
                       Selected:{" "}
-                      <span className="font-medium font-mono">
+                      <span className="font-medium">
                         {linkUserSearch.data?.content?.find((u) => u.id === linkUserId)?.username ??
                           "…"}
                       </span>
-                      <span className="ml-2 text-muted-foreground font-mono text-xs">
-                        {linkUserId}
+                      <span className="ml-2 text-muted-foreground">
+                        <CopyableUuid value={linkUserId} href={`/identity/users/${linkUserId}`} />
                       </span>
                     </p>
                   ) : null}

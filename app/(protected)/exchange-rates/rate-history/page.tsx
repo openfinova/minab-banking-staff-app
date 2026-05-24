@@ -12,6 +12,8 @@ import {
 } from "@/lib/api/modules/exchange";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
@@ -148,14 +151,16 @@ function Content() {
               <Input value={histTarget} onChange={(e) => setHistTarget(e.target.value)} className="w-24 uppercase" />
             </div>
             <RateTypeSelect value={histType} onChange={setHistType} label="Rate type" />
-            <div className="space-y-1.5">
-              <Label className="text-xs uppercase text-muted-foreground">Start</Label>
-              <Input type="date" value={histStart} onChange={(e) => setHistStart(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs uppercase text-muted-foreground">End</Label>
-              <Input type="date" value={histEnd} onChange={(e) => setHistEnd(e.target.value)} />
-            </div>
+            <DateRangeFilter
+              startDate={histStart}
+              endDate={histEnd}
+              startLabel="Start"
+              endLabel="End"
+              onChange={({ startDate, endDate }) => {
+                setHistStart(startDate);
+                setHistEnd(endDate);
+              }}
+            />
             <Button type="button" onClick={loadHistory} disabled={histLoading}>
               {histLoading ? "Loading…" : "Load history"}
             </Button>
@@ -169,6 +174,7 @@ function Content() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead className="text-right">Mid</TableHead>
@@ -180,6 +186,9 @@ function Content() {
                 <TableBody>
                   {histRows.map((row) => (
                     <TableRow key={row.id}>
+                      <TableCell>
+                        <CopyableUuid value={row.id} />
+                      </TableCell>
                       <TableCell>{row.rateDate}</TableCell>
                       <TableCell>{row.rateType}</TableCell>
                       <TableCell className="text-right font-mono text-xs">{formatExchangeNum(row.rate)}</TableCell>
@@ -298,10 +307,9 @@ function Content() {
               </div>
               <div className="space-y-1.5">
                 <Label>Rate date</Label>
-                <Input
-                  type="date"
+                <DateInput
                   value={editForm.rateDate}
-                  onChange={(e) => setEditForm((f) => (f ? { ...f, rateDate: e.target.value } : f))}
+                  onChange={(v) => setEditForm((f) => (f ? { ...f, rateDate: v } : f))}
                 />
               </div>
               <div className="sm:col-span-2">

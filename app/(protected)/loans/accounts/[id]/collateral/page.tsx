@@ -7,8 +7,10 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { DateInput } from "@/components/ui/date-input";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { LoanServicingLinks } from "@/components/loans/loan-servicing-links";
 import { StatusBadge } from "@/components/data/status-badge";
 import { describeApiError } from "@/lib/api/errors";
@@ -98,7 +100,7 @@ function Content() {
           <div className="flex gap-2">
             <Input type="number" value={valAmt} onChange={(e) => setValAmt(e.target.value)} />
             <Input className="w-24" value={ccy} onChange={(e) => setCcy(e.target.value.toUpperCase())} maxLength={3} />
-            <Input type="date" value={valDate} onChange={(e) => setValDate(e.target.value)} />
+            <DateInput value={valDate} onChange={setValDate} />
           </div>
           <Input placeholder="Location" value={loc} onChange={(e) => setLoc(e.target.value)} />
           <Button
@@ -155,12 +157,12 @@ function CollateralRow({
   return (
     <div className="border rounded-md p-3 text-sm space-y-2">
       <div className="flex flex-wrap gap-2 items-center">
-        <span className="font-mono text-[10px]">{c.id}</span>
+        <CopyableUuid value={c.id} />
         {c.collateralType} {c.status ? <StatusBadge status={c.status} /> : null}
       </div>
       <div className="flex flex-wrap gap-2">
         <Input className="h-8 w-28" value={vAmt} onChange={(e) => setVAmt(e.target.value)} />
-        <Input type="date" className="h-8 w-36" value={vDt} onChange={(e) => setVDt(e.target.value)} />
+        <DateInput className="h-8 w-36" value={vDt} onChange={setVDt} />
         <Button
           size="sm"
           variant="outline"

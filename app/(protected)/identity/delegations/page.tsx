@@ -8,6 +8,7 @@ import { Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
+import { DateTimeInput } from "@/components/ui/datetime-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -42,6 +43,7 @@ import { Permissions } from "@/lib/rbac/permissions";
 import { delegationsApi } from "@/lib/api/modules/delegations";
 import { ConfirmAction } from "@/components/data/confirm-action";
 import { StatusBadge } from "@/components/data/status-badge";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import { formatDateTime } from "@/lib/utils";
@@ -166,6 +168,7 @@ function DelegationsContent() {
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>UUID</TableHead>
             <TableHead>From</TableHead>
             <TableHead>To</TableHead>
             <TableHead>Type</TableHead>
@@ -177,12 +180,15 @@ function DelegationsContent() {
         <TableBody>
           {rows.map((d) => (
             <TableRow key={d.id}>
+              <TableCell>
+                <CopyableUuid value={d.id} />
+              </TableCell>
               <TableCell className="text-xs">
-                <div className="font-mono">{d.delegatedFromUserId}</div>
+                <CopyableUuid value={d.delegatedFromUserId} />
                 <div className="text-muted-foreground">{d.delegatedFromUsername ?? ""}</div>
               </TableCell>
               <TableCell className="text-xs">
-                <div className="font-mono">{d.delegatedToUserId}</div>
+                <CopyableUuid value={d.delegatedToUserId} />
                 <div className="text-muted-foreground">{d.delegatedToUsername ?? ""}</div>
               </TableCell>
               <TableCell>{d.transactionType ?? "-"}</TableCell>
@@ -471,14 +477,14 @@ function CreateDelegationDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label>Valid from</Label>
-              <Input type="datetime-local" {...form.register("validFrom")} />
+              <DateTimeInput value={form.watch("validFrom") ?? ""} onChange={(v) => form.setValue("validFrom", v, { shouldValidate: true })} />
               {form.formState.errors.validFrom ? (
                 <p className="text-xs text-destructive">{form.formState.errors.validFrom.message}</p>
               ) : null}
             </div>
             <div className="space-y-1.5">
               <Label>Valid until (optional)</Label>
-              <Input type="datetime-local" {...form.register("validUntil")} />
+              <DateTimeInput value={form.watch("validUntil") ?? ""} onChange={(v) => form.setValue("validUntil", v, { shouldValidate: true })} />
               {form.formState.errors.validUntil ? (
                 <p className="text-xs text-destructive">
                   {form.formState.errors.validUntil.message}

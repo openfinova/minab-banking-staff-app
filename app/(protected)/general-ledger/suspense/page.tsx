@@ -19,6 +19,7 @@ import { RouteGuard } from "@/components/rbac/route-guard";
 import { describeApiError } from "@/lib/api/errors";
 import { glSuspenseApi } from "@/lib/api/modules/operations";
 import { Permissions } from "@/lib/rbac/permissions";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { formatCurrency } from "@/lib/utils";
 
@@ -61,6 +62,7 @@ function SuspenseContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>UUID</TableHead>
                     <TableHead>Reference</TableHead>
                     <TableHead>Posted</TableHead>
                     <TableHead>Status</TableHead>
@@ -71,7 +73,10 @@ function SuspenseContent() {
                 <TableBody>
                   {rows.map((r) => (
                     <TableRow key={r.id}>
-                      <TableCell className="font-mono text-xs">{r.transactionReference ?? r.id.slice(0, 8)}</TableCell>
+                      <TableCell>
+                        <CopyableUuid value={r.id} />
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{r.transactionReference ?? "—"}</TableCell>
                       <TableCell className="text-xs">{r.postingDate ?? "—"}</TableCell>
                       <TableCell>
                         <StatusBadge status={r.status} />

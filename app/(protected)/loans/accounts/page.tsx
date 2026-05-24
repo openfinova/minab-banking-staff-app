@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { DateRangeFilter } from "@/components/ui/date-range-filter";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -24,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { Pagination } from "@/components/data/pagination";
 import { LoanStatusBadge } from "@/components/loans/loan-badges";
 import { LoanQuickLookup } from "@/components/loans/loan-quick-lookup";
@@ -180,16 +182,14 @@ function AccountsContent() {
           ) : null}
 
           {mode === "maturing" ? (
-            <div className="flex flex-wrap gap-3">
-              <div className="grid gap-1.5">
-                <Label>Start</Label>
-                <Input type="date" value={mStart} onChange={(e) => setMStart(e.target.value)} />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>End</Label>
-                <Input type="date" value={mEnd} onChange={(e) => setMEnd(e.target.value)} />
-              </div>
-            </div>
+            <DateRangeFilter
+              startDate={mStart}
+              endDate={mEnd}
+              onChange={({ startDate, endDate }) => {
+                setMStart(startDate);
+                setMEnd(endDate);
+              }}
+            />
           ) : null}
 
           {mode === "customer" ? (
@@ -214,6 +214,7 @@ function AccountsContent() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>UUID</TableHead>
                       <TableHead>Number</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Customer</TableHead>
@@ -224,11 +225,16 @@ function AccountsContent() {
                   <TableBody>
                     {rows.map((r) => (
                       <TableRow key={r.id}>
+                        <TableCell>
+                          <CopyableUuid value={r.id} href={`/loans/accounts/${r.id}`} />
+                        </TableCell>
                         <TableCell className="font-mono text-xs">{r.loanAccountNumber}</TableCell>
                         <TableCell>
                           <LoanStatusBadge status={r.status} />
                         </TableCell>
-                        <TableCell className="font-mono text-[10px]">{r.customerId}</TableCell>
+                        <TableCell>
+                          <CopyableUuid value={r.customerId} href={`/customers/${r.customerId}`} />
+                        </TableCell>
                         <TableCell>
                           {r.principalAmount} {r.currency}
                         </TableCell>

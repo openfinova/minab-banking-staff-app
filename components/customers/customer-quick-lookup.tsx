@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 import { describeApiError } from "@/lib/api/errors";
 import { customersApi, type CustomerResponse } from "@/lib/api/modules/customers";
@@ -97,6 +98,7 @@ export function CustomerQuickLookup({
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>UUID</TableHead>
                 <TableHead>Number</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
@@ -141,6 +143,9 @@ function CustomerLookupRow({
 
   return (
     <TableRow>
+      <TableCell>
+        <CopyableUuid value={c.id} href={`/customers/${c.id}`} />
+      </TableCell>
       <TableCell className="font-mono text-xs">{c.customerNumber}</TableCell>
       <TableCell>{label}</TableCell>
       <TableCell>{c.type}</TableCell>

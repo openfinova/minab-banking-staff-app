@@ -6,6 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
+import { DateTimeInput } from "@/components/ui/datetime-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -324,7 +325,7 @@ export function CreateUserForm({
       )}
 
       <Field label="Account expires at" error={form.formState.errors.accountExpiresAt?.message}>
-        <Input type="datetime-local" {...form.register("accountExpiresAt")} />
+        <DateTimeInput value={form.watch("accountExpiresAt") ?? ""} onChange={(v) => form.setValue("accountExpiresAt", v, { shouldValidate: true })} />
       </Field>
       <div />
       <Field

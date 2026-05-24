@@ -22,6 +22,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
 import { glOperationalAccountsApi } from "@/lib/api/modules/operations";
 import { Permissions } from "@/lib/rbac/permissions";
+import { CopyableUuid } from "@/components/data/copyable-uuid";
 import { StatusBadge } from "@/components/data/status-badge";
 
 export default function OperationalGlAccountsPage() {
@@ -130,6 +131,7 @@ function OperationalContent() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>UUID</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>GL code</TableHead>
                   <TableHead>GL name</TableHead>
@@ -139,6 +141,9 @@ function OperationalContent() {
               <TableBody>
                 {configs.data.map((c) => (
                   <TableRow key={c.id}>
+                    <TableCell>
+                      <CopyableUuid value={c.id} />
+                    </TableCell>
                     <TableCell className="font-mono text-xs">{c.type}</TableCell>
                     <TableCell className="font-mono text-xs">{c.glAccountCode}</TableCell>
                     <TableCell>{c.glAccountName}</TableCell>
