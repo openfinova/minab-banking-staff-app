@@ -9,6 +9,7 @@ dist
 *.log
 .DS_Store
 .vscode/*
+.cursor/*
 !.vscode/launch.json
 !.vscode/settings.json
 .idea
@@ -18,3 +19,8 @@ test-results
 .cache
 *.tsbuildinfo
 next-env.d.ts.bak
+
+# Environment files
+.env
+.env.staging
+.env.production
