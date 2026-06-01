@@ -1,0 +1,39 @@
+# =============================================================================
+# OpenFinova Minab Banking Staff App — Code Quality
+# =============================================================================
+# Validates code formatting and TypeScript types on pull requests.
+# =============================================================================
+
+name: Code Quality
+
+on:
+  pull_request:
+    branches: [ main, dev ]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run lint
+
+      - name: Check types
+        run: npm run typecheck
