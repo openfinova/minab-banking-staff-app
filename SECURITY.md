@@ -1,6 +1,6 @@
 # Security Policy
 
-**Project:** Minab Banking  
+**Project:** Minab Banking Staff App 
 **Maintainer:** Ali Behzadian / OpenFinova  
 **Contact:** maintainers@openfinova.com
 
