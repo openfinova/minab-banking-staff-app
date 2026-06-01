@@ -1,0 +1,61 @@
+# =============================================================================
+# OpenFinova Minab Banking Staff App — CI Build & Test
+# =============================================================================
+# Runs on every push to main / dev and on all pull requests.
+# Steps: checkout → setup Node → install → lint → typecheck → test → build
+# =============================================================================
+
+name: CI Build & Test
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL }}
+          NEXT_PUBLIC_OIDC_AUTHORITY: ${{ vars.NEXT_PUBLIC_OIDC_AUTHORITY }}
+          NEXT_PUBLIC_OIDC_CLIENT_ID: ${{ vars.NEXT_PUBLIC_OIDC_CLIENT_ID }}
+          NEXT_PUBLIC_OIDC_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OIDC_REDIRECT_URI }}
+          NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI: ${{ vars.NEXT_PUBLIC_OIDC_POST_LOGOUT_REDIRECT_URI }}
+          NEXT_PUBLIC_OIDC_SCOPES: ${{ vars.NEXT_PUBLIC_OIDC_SCOPES }}
+          NEXT_PUBLIC_IDLE_TIMEOUT_MS: ${{ vars.NEXT_PUBLIC_IDLE_TIMEOUT_MS }}
+          NEXT_PUBLIC_IDLE_WARNING_MS: ${{ vars.NEXT_PUBLIC_IDLE_WARNING_MS }}
