@@ -1,0 +1,77 @@
+// Permission catalog mirrors the BankingPermission contract referenced by the
+// identity-api module. Strings must remain stable as they are extracted from
+// the JWT `permissions` claim and matched at the UI layer.
+
+export const Permissions = {
+  AdminUsersRead: "admin:users:read",
+  AdminUsersWrite: "admin:users:write",
+  AdminRolesRead: "admin:roles:read",
+  AdminRolesWrite: "admin:roles:write",
+  AdminDoaRead: "admin:doa:read",
+  AdminDoaWrite: "admin:doa:write",
+  AdminConfigRead: "admin:config:read",
+  AdminConfigWrite: "admin:config:write",
+  AuditRead: "audit:read",
+  AuditReadOwn: "audit:read:own",
+  ReportGenerate: "report:generate",
+  ProfileReadOwn: "profile:read:own",
+  PasswordChangeOwn: "password:change:own",
+  MfaManageOwn: "mfa:manage:own",
+  HolidayRead: "holiday:read",
+  FeeRead: "fee:read",
+  VelocityLimitRead: "velocity-limit:read",
+  ExchangeRateRead: "exchange-rate:read",
+  ExchangeRateWrite: "exchange-rate:write",
+  CompensationRead: "compensation:read",
+  PaymentInitiate: "payment:initiate",
+  GlRead: "gl:read",
+  GlApprove: "gl:approve",
+  CustomerRead: "customer:read",
+  CustomerWrite: "customer:write",
+  CustomerPiiRead: "customer:pii:read",
+  /** Compliance screening & AML desk (stubs expand over time) */
+  ComplianceScreeningRun: "compliance:screening:run",
+  ComplianceScreeningRead: "compliance:screening:read",
+  ComplianceAlertRead: "compliance:alert:read",
+  ComplianceAlertTriage: "compliance:alert:triage",
+  OperatorNoteRead: "operator:note:read",
+  OperatorNoteWrite: "operator:note:write",
+  NotificationRead: "notification:read",
+  NotificationWrite: "notification:write",
+  ReconciliationRead: "reconciliation:read",
+  ReconciliationWrite: "reconciliation:write",
+  AccountRead: "account:read",
+  AccountWrite: "account:write",
+  TransactionRead: "transaction:read",
+  TransactionWrite: "transaction:write",
+  /** Bulk fee waiver campaigns (S3) */
+  FeeCampaignWrite: "fee:campaign:write",
+  LoanRead: "loan:read",
+  LoanWrite: "loan:write",
+  LoanApprove: "loan:approve",
+  LoanDisburse: "loan:disburse",
+  LoanDisburseApprove: "loan:disburse:approve",
+  LoanWriteOff: "loan:write-off",
+  LoanRestructure: "loan:restructure",
+  LoanRestructureApprove: "loan:restructure:approve",
+  LoanCollect: "loan:collect",
+  LoanCollectApprove: "loan:collect:approve",
+} as const;
+
+export type PermissionKey = keyof typeof Permissions;
+export type PermissionString = (typeof Permissions)[PermissionKey];
+
+export type PermissionMode = "all" | "any";
+
+export function hasPermission(
+  granted: ReadonlyArray<string> | undefined | null,
+  required: ReadonlyArray<string>,
+  mode: PermissionMode = "all",
+): boolean {
+  if (!required || required.length === 0) return true;
+  if (!granted || granted.length === 0) return false;
+  const set = new Set(granted);
+  return mode === "all"
+    ? required.every((p) => set.has(p))
+    : required.some((p) => set.has(p));
+}
