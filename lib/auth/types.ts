@@ -34,12 +34,12 @@ export interface AuthUser {
   branchCode?: string;
   employeeId?: string;
   userType?: string;
+  /** OIDC acr claim — assurance level used during authentication (e.g. gold = MFA completed). */
+  acr?: string;
 }
 
+/** Browser-visible session (tokens remain server-side in the BFF). */
 export interface AuthSession {
-  accessToken: string;
-  idToken?: string;
-  refreshToken?: string;
   expiresAt: number;
   user: AuthUser;
 }

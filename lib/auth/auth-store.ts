@@ -39,9 +39,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }),
 }));
 
+/** Tokens are server-side only; API calls use the BFF proxy. */
 export function getAccessToken(): string | null {
-  const session = useAuthStore.getState().session;
-  if (!session) return null;
-  if (session.expiresAt <= Date.now()) return null;
-  return session.accessToken;
+  return null;
 }

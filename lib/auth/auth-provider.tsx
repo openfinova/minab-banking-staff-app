@@ -1,15 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import {
-  refreshAccessToken,
-  startLogin,
-  startRpInitiatedLogout,
-  tokenResponseToSession,
-} from "@/lib/auth/oidc";
-// refreshAccessToken used by token refresh timer; startRpInitiatedLogout drives RP-initiated logout.
-import { clearSession, loadSession, saveSession, setReturnTo } from "@/lib/auth/storage";
 import { useAuthStore } from "@/lib/auth/auth-store";
 import type { AuthSession } from "@/lib/auth/types";
 import { appConfig } from "@/lib/config";
@@ -29,78 +20,63 @@ interface AuthContextValue {
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
 
-const REFRESH_BUFFER_MS = 60_000;
+interface SessionResponse {
+  authenticated: boolean;
+  expiresAt?: number;
+  user?: AuthSession["user"];
+  forcePasswordChange?: boolean;
+}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
-  const { session, status, hydrate, setSession, setStatus } = useAuthStore();
-  const refreshTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { session, status, hydrate, setStatus } = useAuthStore();
 
-  const scheduleRefresh = React.useCallback((current: AuthSession | null) => {
-    if (refreshTimer.current) {
-      clearTimeout(refreshTimer.current);
-      refreshTimer.current = null;
-    }
-    if (!current?.refreshToken) return;
-    const msUntilRefresh = current.expiresAt - Date.now() - REFRESH_BUFFER_MS;
-    const delay = Math.max(msUntilRefresh, 5_000);
-    refreshTimer.current = setTimeout(() => {
-      void doRefresh(current.refreshToken!, current);
-    }, delay);
-    // doRefresh defined below; exhaustive-deps wants it here but ordering would create a stale loop.
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- timer calls latest doRefresh from closure refresh
-  }, []);
-
-  const doRefresh = React.useCallback(
-    async (refreshToken: string, previous: AuthSession | null) => {
-      try {
-        const token = await refreshAccessToken(refreshToken);
-        const next = tokenResponseToSession(token, previous);
-        saveSession(next);
-        setSession(next);
-        scheduleRefresh(next);
-      } catch {
-        clearSession();
-        setSession(null);
-        router.push("/login?reason=session-expired");
+  const loadSession = React.useCallback(async () => {
+    setStatus("loading");
+    try {
+      const res = await fetch(appConfig.oidc.sessionPath, { credentials: "include" });
+      if (!res.ok) {
+        hydrate(null);
+        setStatus("unauthenticated");
+        return;
       }
-    },
-    [router, setSession, scheduleRefresh],
-  );
+      const data = (await res.json()) as SessionResponse;
+      if (!data.authenticated || !data.user || !data.expiresAt) {
+        hydrate(null);
+        setStatus("unauthenticated");
+        return;
+      }
+      const next: AuthSession = {
+        expiresAt: data.expiresAt,
+        user: data.user,
+      };
+      hydrate(next);
+      setStatus(data.forcePasswordChange ? "force-password-change" : "authenticated");
+    } catch {
+      hydrate(null);
+      setStatus("unauthenticated");
+    }
+  }, [hydrate, setStatus]);
 
   React.useEffect(() => {
-    const persisted = loadSession();
-    hydrate(persisted);
-    if (persisted?.refreshToken) scheduleRefresh(persisted);
-    return () => {
-      if (refreshTimer.current) clearTimeout(refreshTimer.current);
-    };
-  }, [hydrate, scheduleRefresh]);
+    void loadSession();
+  }, [loadSession]);
 
   const loginWithRedirect = React.useCallback(async (returnTo?: string) => {
     useAuthStore.getState().setError(null);
-    if (returnTo) setReturnTo(returnTo);
-    setStatus("loading");
-    const url = await startLogin();
-    window.location.assign(url);
-  }, [setStatus]);
+    const url = new URL(appConfig.oidc.loginPath, window.location.origin);
+    if (returnTo) url.searchParams.set("returnTo", returnTo);
+    window.location.assign(url.toString());
+  }, []);
 
   const logout = React.useCallback(async () => {
-    const idToken = session?.idToken;
-    clearSession();
-    setSession(null);
-    if (refreshTimer.current) clearTimeout(refreshTimer.current);
-    if (appConfig.oidc.authority) {
-      startRpInitiatedLogout(idToken);
-      return;
-    }
-    router.push("/login");
-  }, [session, setSession, router]);
+    hydrate(null);
+    setStatus("unauthenticated");
+    window.location.assign(appConfig.oidc.logoutPath);
+  }, [hydrate, setStatus]);
 
   const refresh = React.useCallback(async () => {
-    if (!session?.refreshToken) return;
-    await doRefresh(session.refreshToken, session);
-  }, [session, doRefresh]);
+    await loadSession();
+  }, [loadSession]);
 
   const can = React.useCallback(
     (required: ReadonlyArray<string>, mode: PermissionMode = "all") =>

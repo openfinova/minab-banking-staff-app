@@ -13,9 +13,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { appConfig } from "@/lib/config";
 
 export function IdleTimeoutWatcher() {
-  const { isAuthenticated, logout, refresh } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const [open, setOpen] = React.useState(false);
 
   const { reset } = useIdleTimeout({
@@ -27,15 +28,14 @@ export function IdleTimeoutWatcher() {
     },
   });
 
-  const stay = React.useCallback(async () => {
+  const reauthenticate = React.useCallback(() => {
     setOpen(false);
-    try {
-      await refresh();
-    } catch {
-      /* refresh failure is handled by provider */
-    }
     reset();
-  }, [refresh, reset]);
+    const url = new URL(appConfig.oidc.loginPath, window.location.origin);
+    url.searchParams.set("prompt", "login");
+    url.searchParams.set("returnTo", window.location.pathname);
+    window.location.assign(url.toString());
+  }, [reset]);
 
   if (!isAuthenticated) return null;
 
@@ -45,13 +45,13 @@ export function IdleTimeoutWatcher() {
         <AlertDialogHeader>
           <AlertDialogTitle>Are you still there?</AlertDialogTitle>
           <AlertDialogDescription>
-            For your security, your session will end shortly due to inactivity. Choose to stay
-            signed in or log out now.
+            For your security, your session will end shortly due to inactivity. Sign in again to
+            continue or log out now.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={() => void logout()}>Log out</AlertDialogCancel>
-          <AlertDialogAction onClick={() => void stay()}>Stay signed in</AlertDialogAction>
+          <AlertDialogAction onClick={reauthenticate}>Sign in again</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -1,9 +1,6 @@
 "use client";
 
 import { appConfig } from "@/lib/config";
-import { getAccessToken, useAuthStore } from "@/lib/auth/auth-store";
-import { refreshAccessToken, tokenResponseToSession } from "@/lib/auth/oidc";
-import { clearSession, saveSession } from "@/lib/auth/storage";
 import { ApiError, type ApiErrorPayload } from "@/lib/api/errors";
 import { serializeQuery, type QueryParams } from "@/lib/api/query";
 
@@ -17,43 +14,9 @@ export interface RequestOptions {
   skipAuth?: boolean;
 }
 
-let refreshPromise: Promise<string | null> | null = null;
-
-async function ensureToken(): Promise<string | null> {
-  const session = useAuthStore.getState().session;
-  if (!session) return null;
-  const buffer = 30_000;
-  if (session.expiresAt - buffer > Date.now()) return session.accessToken;
-  if (!session.refreshToken) return session.accessToken;
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      try {
-        const token = await refreshAccessToken(session.refreshToken!);
-        const next = tokenResponseToSession(token, session);
-        saveSession(next);
-        useAuthStore.getState().setSession(next);
-        return next.accessToken;
-      } catch {
-        clearSession();
-        useAuthStore.getState().setSession(null);
-        return null;
-      } finally {
-        refreshPromise = null;
-      }
-    })();
-  }
-  return refreshPromise;
-}
-
-async function buildHeaders(custom?: Record<string, string>, skipAuth?: boolean): Promise<Headers> {
+async function buildHeaders(custom?: Record<string, string>): Promise<Headers> {
   const headers = new Headers(custom);
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
-  if (!headers.has("Content-Type") && custom && custom["Content-Type"] !== undefined) {
-    /* keep custom content type */
-  }
-  if (skipAuth) return headers;
-  const token = (await ensureToken()) ?? getAccessToken();
-  if (token) headers.set("Authorization", `Bearer ${token}`);
   return headers;
 }
 
@@ -78,9 +41,10 @@ async function parseError(response: Response): Promise<ApiError> {
 
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = "GET", query, body, headers, signal, rawResponse, skipAuth } = options;
-  const url = `${appConfig.apiBaseUrl}${path}${serializeQuery(query)}`;
+  const base = skipAuth ? "" : appConfig.apiBaseUrl;
+  const url = `${base}${path}${serializeQuery(query)}`;
 
-  const finalHeaders = await buildHeaders(headers, skipAuth);
+  const finalHeaders = await buildHeaders(headers);
   let payload: BodyInit | null | undefined;
   if (body !== undefined && body !== null) {
     if (body instanceof FormData) {
@@ -99,9 +63,9 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
     credentials: "include",
   });
 
-  if (response.status === 401 && !skipAuth) {
-    clearSession();
-    useAuthStore.getState().setSession(null);
+  if (response.status === 401 && !skipAuth && typeof window !== "undefined") {
+    const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
+    window.location.assign(`${appConfig.oidc.loginPath}?returnTo=${returnTo}`);
     throw await parseError(response);
   }
 

@@ -33,6 +33,7 @@ import {
 } from "@/lib/schemas/password-policy";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError, ApiError } from "@/lib/api/errors";
+import { handleStepUpOnError } from "@/lib/auth/step-up";
 
 export interface CreateUserFormProps {
   /** When set: always CUSTOMER, party id fixed; omit user-type and party inputs. */
@@ -110,6 +111,7 @@ export function CreateUserForm({
       }
     },
     onError: (error) => {
+      if (handleStepUpOnError(error)) return;
       if (error instanceof ApiError) {
         for (const [field, message] of Object.entries(error.fieldErrors)) {
           form.setError(field as keyof CreateUserInput, { message });

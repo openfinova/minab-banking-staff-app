@@ -20,6 +20,7 @@ import { usersApi } from "@/lib/api/modules/users";
 import { rolesApi } from "@/lib/api/modules/roles";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
+import { handleStepUpOnError } from "@/lib/auth/step-up";
 import { generateBankCompliantPassword, PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/schemas/password-policy";
 import { CUSTOMER_PORTAL_ROLE_NAME } from "@/lib/schemas/users";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -216,6 +217,7 @@ function UserDetail() {
       setSuspensionUntil("");
       refresh();
     } catch (error) {
+      if (handleStepUpOnError(error)) return;
       toast({
         variant: "destructive",
         title: "Action failed",
@@ -522,6 +524,7 @@ function UserRolesEditor({
       toast({ title: "Roles updated" });
     },
     onError: (error) => {
+      if (handleStepUpOnError(error)) return;
       toast({
         variant: "destructive",
         title: "Could not update roles",
