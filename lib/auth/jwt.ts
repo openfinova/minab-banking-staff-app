@@ -60,5 +60,6 @@ export function claimsToUser(claims: AuthTokenClaims): AuthUser {
     branchCode: claims.branch_code,
     employeeId: claims.employee_id,
     userType: claims.user_type,
+    acr: typeof claims.acr === "string" ? claims.acr : undefined,
   };
 }
