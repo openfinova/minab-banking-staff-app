@@ -1,0 +1,44 @@
+# Normalize all text files to LF in the repo
+* text=auto eol=lf
+
+# TypeScript / JavaScript
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.mjs  text eol=lf
+*.cjs  text eol=lf
+
+# Styles
+*.css  text eol=lf
+*.scss text eol=lf
+
+# Markup & config
+*.html text eol=lf
+*.json text eol=lf
+*.md   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+# Shell & Docker
+*.sh          text eol=lf
+Dockerfile    text eol=lf
+.dockerignore text eol=lf
+
+# Env templates (tracked examples only)
+.env.example text eol=lf
+
+# SVG icons are text in this codebase
+*.svg text eol=lf
+
+# Binaries — never touch
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.ico   binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
