@@ -24,7 +24,8 @@ export function IdleTimeoutWatcher() {
     onWarning: () => setOpen(true),
     onTimeout: () => {
       setOpen(false);
-      void logout();
+      // Local BFF session end only — avoids IdP post-logout racing with the next OAuth login.
+      window.location.assign(appConfig.oidc.sessionEndPath);
     },
   });
 
