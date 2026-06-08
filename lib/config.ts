@@ -9,6 +9,7 @@ export const appConfig = {
   oidc: {
     loginPath: "/api/auth/login",
     logoutPath: "/api/auth/logout",
+    sessionEndPath: "/api/auth/session/end",
     sessionPath: "/api/auth/session",
     stepUpPath: "/api/auth/step-up",
   },
