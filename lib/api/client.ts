@@ -1,6 +1,7 @@
 "use client";
 
 import { appConfig } from "@/lib/config";
+import { redirectToAppLogin } from "@/lib/auth/app-login-redirect";
 import { ApiError, type ApiErrorPayload } from "@/lib/api/errors";
 import { serializeQuery, type QueryParams } from "@/lib/api/query";
 
@@ -64,8 +65,10 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   });
 
   if (response.status === 401 && !skipAuth && typeof window !== "undefined") {
-    const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
-    window.location.assign(`${appConfig.oidc.loginPath}?returnTo=${returnTo}`);
+    redirectToAppLogin({
+      returnTo: window.location.pathname + window.location.search,
+      reason: "session-expired",
+    });
     throw await parseError(response);
   }
 

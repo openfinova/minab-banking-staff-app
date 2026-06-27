@@ -23,47 +23,16 @@ import { glApprovalsApi, type GlApprovalQueueItem } from "@/lib/api/modules/oper
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";
 import { describeApiError } from "@/lib/api/errors";
-import { handleStepUpOnError, startStepUp } from "@/lib/auth/step-up";
-import { useAuth } from "@/lib/auth/auth-provider";
+import { handleStepUpOnError } from "@/lib/auth/step-up";
 import * as React from "react";
 import { ConfirmAction } from "@/components/data/confirm-action";
 
 export default function GlApprovalsPage() {
   return (
     <RouteGuard permissions={[Permissions.GlApprove]}>
-      <GlApprovalsStepUpGate />
+      <GlApprovalsContent />
     </RouteGuard>
   );
-}
-
-/**
- * Ensures the session carries a gold ACR token before rendering the approvals UI.
- * GL approve/reject is the one operation that demands step-up even within a gold session
- * (defence-in-depth for irreversible financial entries). Checking upfront avoids the user
- * reaching the Approve button, losing the confirmation dialog context on a 403, and having
- * to restart the action after completing MFA.
- */
-function GlApprovalsStepUpGate() {
-  const { session } = useAuth();
-  const [ready, setReady] = React.useState(false);
-
-  React.useEffect(() => {
-    if (!session) return;
-    if (session.user.acr === "urn:mace:incommon:iap:gold") {
-      setReady(true);
-    } else {
-      startStepUp(window.location.pathname);
-    }
-  }, [session]);
-
-  if (!ready) {
-    return (
-      <div className="flex items-center justify-center py-24 text-sm text-muted-foreground">
-        Verifying authentication level…
-      </div>
-    );
-  }
-  return <GlApprovalsContent />;
 }
 
 function GlApprovalsContent() {

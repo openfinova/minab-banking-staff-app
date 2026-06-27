@@ -14,6 +14,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { appConfig } from "@/lib/config";
+import { redirectToAppLogin } from "@/lib/auth/app-login-redirect";
 
 export function IdleTimeoutWatcher() {
   const { isAuthenticated, logout } = useAuth();
@@ -32,10 +33,10 @@ export function IdleTimeoutWatcher() {
   const reauthenticate = React.useCallback(() => {
     setOpen(false);
     reset();
-    const url = new URL(appConfig.oidc.loginPath, window.location.origin);
-    url.searchParams.set("prompt", "login");
-    url.searchParams.set("returnTo", window.location.pathname);
-    window.location.assign(url.toString());
+    redirectToAppLogin({
+      returnTo: window.location.pathname + window.location.search,
+      reason: "session-expired",
+    });
   }, [reset]);
 
   if (!isAuthenticated) return null;

@@ -6,6 +6,7 @@ import { Building2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth/auth-provider";
+import { takeReturnTo } from "@/lib/auth/storage";
 
 const REASON_TEXT: Record<string, string> = {
   "session-expired": "Your session has expired. Please sign in again.",
@@ -18,19 +19,20 @@ function LoginContent() {
   const search = useSearchParams();
   const { isAuthenticated, isLoading, forcePasswordChange, loginWithRedirect } = useAuth();
   const reason = search.get("reason") ?? undefined;
+  const returnTo = search.get("returnTo") ?? takeReturnTo() ?? "/dashboard";
   const [pending, setPending] = React.useState(false);
 
   React.useEffect(() => {
     if (isLoading) return;
     if (isAuthenticated) {
-      router.replace(forcePasswordChange ? "/account/force-password-change" : "/dashboard");
+      router.replace(forcePasswordChange ? "/account/force-password-change" : returnTo);
     }
-  }, [isAuthenticated, isLoading, forcePasswordChange, router]);
+  }, [isAuthenticated, isLoading, forcePasswordChange, router, returnTo]);
 
   const onSignIn = async () => {
     setPending(true);
     try {
-      await loginWithRedirect();
+      await loginWithRedirect(returnTo);
     } finally {
       setPending(false);
     }

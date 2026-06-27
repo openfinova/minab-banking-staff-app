@@ -19,7 +19,7 @@ export async function createPkceAuthorizeUrl(options?: {
   acrValues?: string;
 }): Promise<{ url: string; codeVerifier: string; state: string; nonce: string }> {
   const { codeVerifier, codeChallenge, state, nonce } = await createPkcePair();
-  const url = new URL("/oauth2/authorize", serverAuthConfig.oidc.authority);
+  const url = new URL(`${serverAuthConfig.oidc.authority}/protocol/openid-connect/auth`);
   url.searchParams.set("response_type", "code");
   url.searchParams.set("client_id", serverAuthConfig.oidc.clientId);
   url.searchParams.set("redirect_uri", serverAuthConfig.oidc.redirectUri);
@@ -50,7 +50,7 @@ export async function exchangeAuthorizationCode(
     code_verifier: codeVerifier,
   });
 
-  const response = await fetch(`${serverAuthConfig.oidc.tokenAuthority}/oauth2/token`, {
+  const response = await fetch(`${serverAuthConfig.oidc.tokenAuthority}/protocol/openid-connect/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -71,7 +71,7 @@ export async function refreshTokens(refreshToken: string): Promise<TokenResponse
     refresh_token: refreshToken,
   });
 
-  const response = await fetch(`${serverAuthConfig.oidc.tokenAuthority}/oauth2/token`, {
+  const response = await fetch(`${serverAuthConfig.oidc.tokenAuthority}/protocol/openid-connect/token`, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body,
@@ -85,8 +85,12 @@ export async function refreshTokens(refreshToken: string): Promise<TokenResponse
 }
 
 export function tokenResponseToBffFields(token: TokenResponse) {
-  const claims = decodeJwt(token.access_token);
-  const user = claimsToUser(claims);
+  const accessClaims = decodeJwt(token.access_token);
+  const idClaims = token.id_token ? decodeJwt(token.id_token) : null;
+  const acr =
+    (typeof accessClaims.acr === "string" ? accessClaims.acr : undefined) ??
+    (typeof idClaims?.acr === "string" ? idClaims.acr : undefined);
+  const user = claimsToUser({ ...accessClaims, acr });
   return {
     accessToken: token.access_token,
     refreshToken: token.refresh_token,
@@ -108,7 +112,7 @@ export function buildRpInitiatedLogoutUrl(idToken: string): string | null {
   } catch {
     return null;
   }
-  const url = new URL("/connect/logout", serverAuthConfig.oidc.authority);
+  const url = new URL(`${serverAuthConfig.oidc.authority}/protocol/openid-connect/logout`);
   url.searchParams.set("client_id", serverAuthConfig.oidc.clientId);
   url.searchParams.set("id_token_hint", idToken);
   url.searchParams.set("post_logout_redirect_uri", serverAuthConfig.oidc.postLogoutRedirectUri);

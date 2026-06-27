@@ -10,14 +10,16 @@ export const serverAuthConfig = {
   publicAppUrl: optional("APP_PUBLIC_URL", "http://localhost:3000").replace(/\/$/, ""),
   apiBaseUrl: optional("API_BASE_URL", "http://localhost:8080"),
   oidc: {
-    /** Issuer URL shown to the browser (authorize / logout redirects). */
-    authority: optional("OIDC_AUTHORITY", "http://localhost:8080").replace(/\/$/, ""),
+    /** Keycloak realm issuer URL shown to the browser (authorize / logout redirects). */
+    authority: optional("OIDC_AUTHORITY", "http://localhost:8081/realms/openfinova").replace(/\/$/, ""),
     /**
-     * Token endpoint base URL for server-side calls (Compose: http://banking-app:8080).
+     * Token endpoint base URL for server-side calls (Compose: http://keycloak:8080/realms/openfinova).
      * Defaults to {@link #authority} for local non-Docker dev.
      */
-    tokenAuthority: optional("OIDC_TOKEN_AUTHORITY", optional("OIDC_AUTHORITY", "http://localhost:8080"))
-        .replace(/\/$/, ""),
+    tokenAuthority: optional(
+      "OIDC_TOKEN_AUTHORITY",
+      optional("OIDC_AUTHORITY", "http://localhost:8081/realms/openfinova"),
+    ).replace(/\/$/, ""),
     clientId: optional("OIDC_CLIENT_ID", "staff-portal"),
     clientSecret: optional("OIDC_CLIENT_SECRET", "staff-portal-secret"),
     redirectUri: optional("OIDC_REDIRECT_URI", "http://localhost:3000/api/auth/callback"),
